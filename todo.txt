@@ -1,0 +1,51 @@
+oyun açılınca menü çıksın önce // yapıldı
+new player opsiyonu // yapıldı
+new player opsiyonu seçilince attribute verme ekranı gelsin // yapıldı
+
+entity'ye forearm EntityPart ekle ve calf EntityPart ekle. // YAPILDI
+
+battle bitince xp verme sistemi ekle, level atlama sistemi ekle mesela, xp to level up tarzı bir int ekleyebilirsin, her level
+atlandığında bu değeri belirli bir miktar arttırabilirsin // yapıldı
+oyuncuya xp attribute'u ekle // yapıldı
+eğer gelen xp level atlamaya yetiyorsa, level atla ve level atlama ekranına yönlendir // yapıldı
+level atlama ekranında 2 point verme hakkı verilsin statlere, bu ekrandandaki işi bitince oyuncunun, town ekranı gelsin. // yapıldı
+eğer gelen xp level atlamaya yetmiyorsa direkt olarak town ekranı gelsin. // yapıldı
+
+bi anda ışınlanmak yerine, model yavaşça ilerlesin // yapıldı
+
+yürüme animasyonu ekle, bacaklar ileri geri yapsın  // yapıldı
+yürüme animasyonunda bacakların hareketini daha gerçekçi yapmaya çalışabilirsin.
+
+player'a light attack geri ekle // yapıldı
+light attack animasyonu yap // yapıldı
+
+leap attack animasyonu yap // yapıldı
+enemy'ye leap attack ekle // yapıldı
+enemy'ye light attack ekle // yapıldı
+
+nefes alıp veriyormuş gibi animasyon yap torsoyu ve lowerTorsoyu aşağı yukarı yap // yapıldı
+nefes alıp verme animasyonuna gerçek oyundaki gibi kafa ve kollar da ufaktan hareket etsin, canlılık hissi için. // yapıldı
+nefes alıp verme animasyonunun bütününü enemy'ye de ekle. // yapıldı
+
+eğer 2. veya 1. bordera ulaştıktan sonra player ve enemy arasındaki mesafe 400 den az olduğu zaman ve zoom olduktan sonra,
+tekrar mesafe açılınca max zoom veya yarı zoom out olmasın, ya oyuncuya tekrar pozisyon alsın kamera ya da o tarz bir çözüm bul.
+
+statleri ve attributeların hepsini ayarla
+şehri yap, market, butonlar, arena...
+
+herhangi bir butona tıklanıldığında tıklama sesi çıksın
+
+guiler arası geçişler kararıp geri aydınlanma geçişleriyle olsun
+
+yeteri kadar yakın olunduğu zaman ileri yürüme olmasın
+
+guiler, butonlar güzelleşecek...
+attributelar ve stat ayarları
+xp level ayarları
+para ekleme
+town'da marketler, silahçı, armourcu
+çeşitli enemyler
+turnuva
+bosslar
+itemler
+itemlerin, gladyatörlerin, armorların, silahların textureları...
