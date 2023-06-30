@@ -334,7 +334,7 @@ public class Player extends Entity{
             fixPosWhenCollide(gp.currentEnemy);
 
             hitbox.x = (int) (torso.x+gp.tileSize*16);
-            hitbox.y = gp.tileSize*96;
+            hitbox.y = gp.tileSize*225;
 
             /*if (willCollideEnemy(gp.currentEnemy)){
                 canMoveForward = false;

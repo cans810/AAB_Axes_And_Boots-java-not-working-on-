@@ -37,6 +37,10 @@ public class GamePanel extends JPanel implements Runnable{
     private static final double MIN_ZOOM_LEVEL_2 = 0.52;
     private double zoomLevel = 1.0;
 
+    private double targetZoomLevel = 1.0;
+    private Timer zoomTimer;
+    private final int ZOOM_DELAY_MS = 10;
+
     public boolean hittingBorder1_player;
     public boolean hittingBorder2_player;
     public boolean hittingBorder1_enemy;
@@ -304,9 +308,7 @@ public class GamePanel extends JPanel implements Runnable{
                 translationY = (int) ((getHeight() - (arenaScreenHeight-200 * zoomLevel)));
             }
 
-            // Apply the translation
             g2.translate(translationX, translationY);
-
             g2.scale(zoomLevel, zoomLevel);
 
             battleArea.draw(g2);
@@ -366,45 +368,46 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     public void zoomOutOnHittingScreenBorder(){
-        if (player.torso.x <= 700 || player.torso.x >= screenWidth + 630 /*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
-            if (zoomLevel > MIN_ZOOM_LEVEL_1) {
-                zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
-                hittingBorder1_player = true;
+        if (getDistance(player.torso.x,player.torso.y,currentEnemy.torso.x,currentEnemy.torso.y) > 500){
+            if (player.torso.x <= 700 || player.torso.x >= screenWidth + 630/*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
+                if (zoomLevel > MIN_ZOOM_LEVEL_1) {
+                    zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
+                    hittingBorder1_player = true;
+                }
+                else{
+                    hittingBorder1_player = false;
+                }
             }
-            else{
-                hittingBorder1_player = false;
+            if (player.torso.x <= 350 || player.torso.x >= screenWidth + 1000/*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
+                if (zoomLevel > MIN_ZOOM_LEVEL_2) {
+                    zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
+                    hittingBorder2_player = true;
+                }
+                else{
+                    hittingBorder2_player = false;
+                }
             }
-        }
-        if (player.torso.x <= 350 || player.torso.x >= screenWidth + 1000/*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
-            if (zoomLevel > MIN_ZOOM_LEVEL_2) {
-                zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
-                hittingBorder2_player = true;
-            }
-            else{
-                hittingBorder2_player = false;
-            }
-        }
 
-        if (currentEnemy.torso.x <= 700 || currentEnemy.torso.x >= screenWidth + 630 /*|| currentEnemy.torso.y < 0 || currentEnemy.torso.y >= screenHeight*/) {
-            if (zoomLevel > MIN_ZOOM_LEVEL_1) {
-                zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
-                hittingBorder1_enemy = true;
+            if (currentEnemy.torso.x <= 700 || currentEnemy.torso.x >= screenWidth + 630/*|| currentEnemy.torso.y < 0 || currentEnemy.torso.y >= screenHeight*/) {
+                if (zoomLevel > MIN_ZOOM_LEVEL_1) {
+                    zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
+                    hittingBorder1_enemy = true;
+                }
+                else{
+                    hittingBorder1_enemy = false;
+                }
             }
-            else{
-                hittingBorder1_enemy = false;
+            if (currentEnemy.torso.x <= 350 || player.torso.x >= screenWidth + 1000/*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
+                if (zoomLevel > MIN_ZOOM_LEVEL_2) {
+                    zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
+                    hittingBorder2_enemy = true;
+                }
+                else{
+                    hittingBorder2_enemy = false;
+                }
             }
         }
-        if (currentEnemy.torso.x <= 350 || player.torso.x >= screenWidth + 1000/*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
-            if (zoomLevel > MIN_ZOOM_LEVEL_2) {
-                zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
-                hittingBorder2_enemy = true;
-            }
-            else{
-                hittingBorder2_enemy = false;
-            }
-        }
-
-        if (getDistance(player.torso.x,player.torso.y,currentEnemy.torso.x,currentEnemy.torso.y) <= 400){
+        else if (getDistance(player.torso.x,player.torso.y,currentEnemy.torso.x,currentEnemy.torso.y) <= 500){
             if (!hittingBorder1_player){
                 zoomLevel = 1.0;
                 zoomedInOnPlayer = true;

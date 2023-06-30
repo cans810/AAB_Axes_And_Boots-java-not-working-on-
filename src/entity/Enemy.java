@@ -353,7 +353,7 @@ public class Enemy extends Entity{
         fixPosWhenCollide(gp.player);
 
         hitbox.x = (int) (torso.x-gp.tileSize*18);
-        hitbox.y = gp.tileSize*96;
+        hitbox.y = gp.tileSize*225;
 
         if (gp.turn.equals("enemy")){
 
