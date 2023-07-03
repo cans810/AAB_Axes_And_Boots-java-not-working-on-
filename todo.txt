@@ -28,14 +28,30 @@ nefes alıp verme animasyonuna gerçek oyundaki gibi kafa ve kollar da ufaktan h
 nefes alıp verme animasyonunun bütününü enemy'ye de ekle. // yapıldı
 
 eğer 2. veya 1. bordera ulaştıktan sonra player ve enemy arasındaki mesafe 400 den az olduğu zaman ve zoom olduktan sonra,
-tekrar mesafe açılınca max zoom veya yarı zoom out olmasın, ya oyuncuya tekrar pozisyon alsın kamera ya da o tarz bir çözüm bul.
+tekrar mesafe açılınca max zoom veya yarı zoom out olmasın, ya oyuncuya tekrar pozisyon alsın kamera ya da o tarz bir çözüm bul. // şimdilik atla
 
-statleri ve attributeların hepsini ayarla
-şehri yap, market, butonlar, arena...
+statleri ve attributeların hepsini ayarla // başlandı
+// önce dexterityyi bitir, arttıkça gelen stepSize ı ve hızı ayarla,
+// dexterity yükseldikçe movementSpeed yükselicek, dolayısıyla leap attack
+// animasyonu da o oranla hızlanıcak, tam destinationX'e varıldığında animasyonun bitmesi için.
 
-herhangi bir butona tıklanıldığında tıklama sesi çıksın
+Dexterity arttıkça, stepSize'ın da belirli bir oranda artıcağı bir formül bul, stepSize ne kadar fazla ise
+movementSpeed de o kadar fazla olmalı, movementSpeed ve stepSize fazla olunca da, animasyonun onlara yetişe-
+bilmesi için de animationSpeed de o oranda artmalı. // yapıldı ama farklı yolla,
 
-guiler arası geçişler kararıp geri aydınlanma geçişleriyle olsun
+süreye bağlı varış, ve bu süreye göre movementSpeed ve gereken eylemlerde animationSpeed'in ayarlanması // BU YENİ YOL, YAPILDI
+
+KODU ÖNCE Bİ ÇALIŞTIR, YAPTIĞIN HER ŞEYİ TEKRAR TEKRAR TEST ET
+
+strength, boy uzamasını cm'ye dönüştürmeyi falan yap her bir strength puanı 2 cm falan olabilir mesela onu düşün
+
+ENEMY'NİN ARKASINA GEÇME OLUCAK MI, OLUCAKSA NASIL YAPICAĞINI DÜŞÜN, EĞER OLUCAKSA HERŞEYDEN ÖNCE ONU YAP.
+
+karakter oluşturma kısmında karakterin gözüksün, mesela strength verdikçe boyunun uzadığı görülsün, boyu uzasın
+
+şehri yap, market, arenaya giriş ekranı, savaşıcağın karakteri inceleme
+
+guiler arası geçişler kararıp geri aydınlanma geçişleriyle olsun // ACİL DEĞİL
 
 yeteri kadar yakın olunduğu zaman ileri yürüme olmasın
 
@@ -49,3 +65,4 @@ turnuva
 bosslar
 itemler
 itemlerin, gladyatörlerin, armorların, silahların textureları...
+herhangi bir butona tıklanıldığında tıklama sesi çıksın

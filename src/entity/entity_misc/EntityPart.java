@@ -18,7 +18,7 @@ public class EntityPart extends Rectangle2D.Double {
     public Shape attachedPart;
     public Point2D.Double attachPoint;
 
-    public int rotationAngle;
+    public double rotationAngle;
 
     public EntityPart(double x,double y,int width,int height,GamePanel gp){
         this.gp = gp;

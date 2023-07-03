@@ -23,11 +23,8 @@ public class LevelUpGUI extends AABGUI {
     public int totalPoints;
 
     String strengthTitle = "Strength";
-    int strengthTitleX;
-    int strengthTitleY;
-    public static int strengthPoint;
-    public int baseStrengthPoint;
-
+    public static double strengthPoint;
+    public double baseStrengthPoint;
     public AABButton increaseStrengthButton;
     public AABButton decreaseStrengthButton;
     public int increaseStrengthButtonHit = -1;
@@ -35,15 +32,22 @@ public class LevelUpGUI extends AABGUI {
     public boolean hoveringDecreaseStrengthButton;
 
     String vitalityTitle = "Vitality";
-    int vitalityTitleX;
-    int vitalityTitleY;
-    public static int vitalityPoint;
-    public int baseVitalityPoint;
+    public static double vitalityPoint;
+    public double baseVitalityPoint;
     public AABButton increaseVitalityButton;
     public AABButton decreaseVitalityButton;
     public int increaseVitalityButtonHit = -1;
     public boolean hoveringIncreaseVitalityButton;
     public boolean hoveringDecreaseVitalityButton;
+
+    String dexterityTitle = "Dexterity";
+    public static double dexterityPoint;
+    public double baseDexterityPoint;
+    public AABButton increaseDexterityButton;
+    public AABButton decreaseDexterityButton;
+    public int increaseDexterityButtonHit = -1;
+    public boolean hoveringIncreaseDexterityButton;
+    public boolean hoveringDecreaseDexterityButton;
 
     public Rectangle proceedButton = new Rectangle();
 
@@ -64,36 +68,37 @@ public class LevelUpGUI extends AABGUI {
         totalPointsTitleX = gp.screenWidth/2;
         totalPointsTitleY = gp.screenHeight/2;
 
-        // stat strength
-        strengthTitleX = gp.screenWidth/2;
-        strengthTitleY = gp.screenHeight/2;
-
-        // stat vitality
-        vitalityTitleX = gp.screenWidth/2;
-        vitalityTitleY = gp.screenHeight/2;
-
         setImages();
 
-        increaseStrengthButton = new AABButton(strengthTitleX-425,strengthTitleY-155,40,40,gp);
+        increaseStrengthButton = new AABButton(gp.screenWidth/2-425,gp.screenHeight/2-155,40,40,gp);
         increaseStrengthButton.button_image = attribute_up;
         increaseStrengthButton.hovering_button_image = attribute_up_hovered;
 
-        decreaseStrengthButton = new AABButton(strengthTitleX-365,strengthTitleY-155,40,40,gp);
+        decreaseStrengthButton = new AABButton(gp.screenWidth/2-365,gp.screenHeight/2-155,40,40,gp);
         decreaseStrengthButton.button_image = attribute_down;
         decreaseStrengthButton.hovering_button_image = attribute_down_hovered;
 
-        increaseVitalityButton = new AABButton(vitalityTitleX-425,vitalityTitleY-95,40,40,gp);
+        increaseVitalityButton = new AABButton(gp.screenWidth/2-425,gp.screenHeight/2-95,40,40,gp);
         increaseVitalityButton.button_image = attribute_up;
         increaseVitalityButton.hovering_button_image = attribute_up_hovered;
 
-        decreaseVitalityButton = new AABButton(vitalityTitleX-365,vitalityTitleY-95,40,40,gp);
+        decreaseVitalityButton = new AABButton(gp.screenWidth/2-365,gp.screenHeight/2-95,40,40,gp);
         decreaseVitalityButton.button_image = attribute_down;
         decreaseVitalityButton.hovering_button_image = attribute_down_hovered;
+
+        increaseDexterityButton = new AABButton(gp.screenWidth/2-425,gp.screenHeight/2-35,40,40,gp);
+        increaseDexterityButton.button_image = attribute_up;
+        increaseDexterityButton.hovering_button_image = attribute_up_hovered;
+
+        decreaseDexterityButton = new AABButton(gp.screenWidth/2-365,gp.screenHeight/2-35,40,40,gp);
+        decreaseDexterityButton.button_image = attribute_down;
+        decreaseDexterityButton.hovering_button_image = attribute_down_hovered;
     }
 
     public void setBaseAttributes(){
         baseStrengthPoint = gp.player.strength;
         baseVitalityPoint = gp.player.vitality;
+        baseDexterityPoint = gp.player.dexterity;
     }
 
     @Override
@@ -106,6 +111,7 @@ public class LevelUpGUI extends AABGUI {
 
     @Override
     public void update() {
+        // strength
         if (isMouseWithinComponent(gp,increaseStrengthButton.getBounds())){
             hoveringIncreaseStrengthButton = true;
         }
@@ -120,6 +126,7 @@ public class LevelUpGUI extends AABGUI {
             hoveringDecreaseStrengthButton = false;
         }
 
+        // vitality
         if (isMouseWithinComponent(gp,increaseVitalityButton.getBounds())){
             hoveringIncreaseVitalityButton = true;
         }
@@ -134,6 +141,20 @@ public class LevelUpGUI extends AABGUI {
             hoveringDecreaseVitalityButton = false;
         }
 
+        // dexterity
+        if (isMouseWithinComponent(gp,increaseDexterityButton.getBounds())){
+            hoveringIncreaseDexterityButton = true;
+        }
+        else if (!isMouseWithinComponent(gp,increaseDexterityButton.getBounds())){
+            hoveringIncreaseDexterityButton = false;
+        }
+
+        if (isMouseWithinComponent(gp,decreaseDexterityButton.getBounds())){
+            hoveringDecreaseDexterityButton = true;
+        }
+        else if (!isMouseWithinComponent(gp,decreaseDexterityButton.getBounds())){
+            hoveringDecreaseDexterityButton = false;
+        }
 
         // update attributes of player if just entered the state
         if (justEnteredState){
@@ -141,10 +162,12 @@ public class LevelUpGUI extends AABGUI {
             setBaseAttributes();
             strengthPoint = gp.player.strength;
             vitalityPoint = gp.player.vitality;
+            dexterityPoint = gp.player.dexterity;
             justEnteredState = false;
         }
 
         if (totalPoints > 0){
+            // strength
             if (increaseStrengthButtonHit == 1){
                 totalPoints -= 1;
                 strengthPoint += 1;
@@ -153,6 +176,7 @@ public class LevelUpGUI extends AABGUI {
                 System.out.println("base str point: " + baseStrengthPoint);
             }
 
+            // vitality
             else if (increaseVitalityButtonHit == 1){
                 totalPoints -= 1;
                 vitalityPoint += 1;
@@ -160,9 +184,19 @@ public class LevelUpGUI extends AABGUI {
                 System.out.println("vt point: " + vitalityPoint);
                 System.out.println("base vt point: " + baseVitalityPoint);
             }
+
+            // dexterity
+            else if (increaseDexterityButtonHit == 1){
+                totalPoints -= 1;
+                dexterityPoint += 20;
+
+                System.out.println("dx point: " + dexterityPoint);
+                System.out.println("base dx point: " + baseDexterityPoint);
+            }
         }
 
         if (increaseStrengthButtonHit == 0){
+            // strength
             if (strengthPoint > baseStrengthPoint){
                 totalPoints += 1;
                 strengthPoint -= 1;
@@ -173,6 +207,7 @@ public class LevelUpGUI extends AABGUI {
         }
 
         else if (increaseVitalityButtonHit == 0){
+            // vitality
             if (vitalityPoint > baseVitalityPoint){
                 totalPoints += 1;
                 vitalityPoint -= 1;
@@ -182,13 +217,26 @@ public class LevelUpGUI extends AABGUI {
             }
         }
 
+        else if (increaseDexterityButtonHit == 0){
+            // dexterity
+            if (dexterityPoint > baseDexterityPoint){
+                totalPoints += 1;
+                dexterityPoint -= 1;
+
+                System.out.println("vt point: " + dexterityPoint);
+                System.out.println("base vt point: " + baseDexterityPoint);
+            }
+        }
+
         increaseStrengthButtonHit = -1;
         increaseVitalityButtonHit = -1;
+        increaseDexterityButtonHit = -1;
     }
 
     public void setAttributesFinal(){
         gp.player.strength = strengthPoint;
         gp.player.vitality = vitalityPoint;
+        gp.player.dexterity = dexterityPoint;
     }
 
     @Override
@@ -206,10 +254,11 @@ public class LevelUpGUI extends AABGUI {
         g2.drawString(totalPointsTitle,totalPointsTitleX-70,totalPointsTitleY-300);
         g2.drawString(Integer.toString(totalPoints),totalPointsTitleX-20,totalPointsTitleY-270);
 
+        // strength
         g2.setFont(new Font("Tahoma", Font.BOLD, 20));
         g2.setColor(new Color(100,20,40));
-        g2.drawString(strengthTitle,strengthTitleX-550,strengthTitleY-126);
-        g2.drawString(Integer.toString(strengthPoint),strengthTitleX-450,strengthTitleY-126);
+        g2.drawString(strengthTitle,gp.screenWidth/2-550,gp.screenHeight/2-126);
+        g2.drawString(Integer.toString((int) strengthPoint),gp.screenWidth/2-450,gp.screenHeight/2-126);
 
         if (hoveringIncreaseStrengthButton){
             g2.drawImage(increaseStrengthButton.hovering_button_image,increaseStrengthButton.getBounds().x,increaseStrengthButton.getBounds().y,null);
@@ -225,10 +274,11 @@ public class LevelUpGUI extends AABGUI {
             g2.drawImage(decreaseStrengthButton.button_image,decreaseStrengthButton.getBounds().x,decreaseStrengthButton.getBounds().y,null);
         }
 
+        // vitality
         g2.setFont(new Font("Tahoma", Font.BOLD, 20));
         g2.setColor(new Color(100,20,40));
-        g2.drawString(vitalityTitle,vitalityTitleX-550,vitalityTitleY-66);
-        g2.drawString(Integer.toString(vitalityPoint),vitalityTitleX-450,vitalityTitleY-66);
+        g2.drawString(vitalityTitle,gp.screenWidth/2-550,gp.screenHeight/2-66);
+        g2.drawString(Integer.toString((int) vitalityPoint),gp.screenWidth/2-450,gp.screenHeight/2-66);
 
         if (hoveringIncreaseVitalityButton){
             g2.drawImage(increaseVitalityButton.hovering_button_image,increaseVitalityButton.getBounds().x,increaseVitalityButton.getBounds().y,null);
@@ -244,9 +294,29 @@ public class LevelUpGUI extends AABGUI {
             g2.drawImage(decreaseVitalityButton.button_image,decreaseVitalityButton.getBounds().x,decreaseVitalityButton.getBounds().y,null);
         }
 
+        // dexterity
+        g2.setFont(new Font("Tahoma", Font.BOLD, 20));
+        g2.setColor(new Color(100,20,40));
+        g2.drawString(dexterityTitle,gp.screenWidth/2-550,gp.screenHeight/2-6);
+        g2.drawString(Integer.toString((int) dexterityPoint),gp.screenWidth/2-450,gp.screenHeight/2-6);
+
+        if (hoveringIncreaseDexterityButton){
+            g2.drawImage(increaseDexterityButton.hovering_button_image,increaseDexterityButton.getBounds().x,increaseDexterityButton.getBounds().y,null);
+        }
+        else {
+            g2.drawImage(increaseDexterityButton.button_image,increaseDexterityButton.getBounds().x,increaseDexterityButton.getBounds().y,null);
+        }
+
+        if (hoveringDecreaseDexterityButton){
+            g2.drawImage(decreaseDexterityButton.hovering_button_image,decreaseDexterityButton.getBounds().x,decreaseDexterityButton.getBounds().y,null);
+        }
+        else {
+            g2.drawImage(decreaseDexterityButton.button_image,decreaseDexterityButton.getBounds().x,decreaseDexterityButton.getBounds().y,null);
+        }
+
         // button proceed
-        proceedButton.x = strengthTitleX+575;
-        proceedButton.y = strengthTitleY+300;
+        proceedButton.x = gp.screenWidth/2+575;
+        proceedButton.y = gp.screenHeight/2+300;
         proceedButton.width = 100;
         proceedButton.height = 50;
         g2.setColor(Color.orange);

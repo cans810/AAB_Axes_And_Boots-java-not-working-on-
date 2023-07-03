@@ -10,18 +10,17 @@ import java.awt.image.BufferedImage;
 import java.util.Random;
 
 public class Enemy extends Entity{
-    Random random;
-
-    public long thinkTimer = 0L;
-    public long thinkTime = 200L;
+    // CHOICE-ACTION RELATED STUFF
+    private Random random;
+    int randomChoice = 0;
 
     public final int baseX = 1580;
     public final int baseY = gp.player.baseY;
 
-    int randomChoice = 0;
-
+    // MOVEMENT-GAME
     public float destinationX;
 
+    // ANIMATION
     public boolean actionMoveForwardExecuted;
     public boolean actionMoveBackwardExecuted;
     public boolean actionLeapAttackExecuted;
@@ -55,6 +54,8 @@ public class Enemy extends Entity{
     public double breathingAnim_armGoDownStartingPosAngle = 4;
     public boolean inBreatheInArmGoUp;
     public boolean inBreatheOutArmGoDown;
+
+    public double animationSpeed;
 
 
     public Enemy(GamePanel gp) {
@@ -133,19 +134,28 @@ public class Enemy extends Entity{
         this.hitbox = new Rectangle((int) (torso.x-gp.tileSize*18),gp.tileSize*72,gp.tileSize*18,gp.tileSize*4);
         side = "right";
 
-        setImages();
+        initEnemy();
 
+        // init
         gui = new EntityGUI(gp, this,"enemy");
         alive = true;
         inBattle = true;
 
+        // breathing animation init
         inBreatheIn = true;
         inBreatheOut = false;
         breathingAnim_torsoY = torso.getBounds().y;
         breathingAnim_lowerTorsoY = torso_lower.getBounds().y;
 
+        // init
         update_pivotPoints();
         update_entityPart_positions();
+    }
+
+    public void initEnemy(){
+        // init
+        setAttributes();
+        setImages();
     }
 
     public void setImages() {
@@ -164,179 +174,50 @@ public class Enemy extends Entity{
         foot_left.image = setupImage("/leftfoot",(int)foot_left.getBounds2D().getWidth(),(int)foot_left.getBounds2D().getHeight());
     }
 
-    @Override
-    public void update_entityPart_positions() {
+    public void setAttributes(){
+        // strength related
+        hitDamage = baseHitDamage + strength;
+        // grow entity when giving stats
 
-        head.x = head.pivotPoint.x - head.width/2;
-        head.y = head.pivotPoint.y - head.height;
+        // vitality related
+        if (!inBattle){
+            HP = vitality*2 + baseHP;
+        }
 
-        // arm right
-        arm_right.x = arm_right.pivotPoint.x - arm_right.width*17/20;
-        arm_right.y = arm_right.pivotPoint.y;
+        // dexterity related
+        //stepSize = ((baseStepSize + (dexterity*gp.tileSize)));
+        stepSize = baseStepSize + (dexterity * gp.tileSize);
 
-        arm_right = rotate_limb(arm_right,0,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
-
-        // forearm right
-        forearm_right.x = forearm_right.pivotPoint.x - forearm_right.width*8/20;
-        forearm_right.y = forearm_right.pivotPoint.y;
-
-        forearm_right = rotate_limb(forearm_right,0,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
-
-        // arm left
-        arm_left.x = arm_left.pivotPoint.x - arm_left.width*3/20;
-        arm_left.y = arm_left.pivotPoint.y;
-
-        arm_left = rotate_limb(arm_left,0,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
-
-        // forearm left
-        forearm_left.x = forearm_left.pivotPoint.x - forearm_left.width*12/20;
-        forearm_left.y = forearm_left.pivotPoint.y;
-
-        forearm_left = rotate_limb(forearm_left,0,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
-
-        // torso lower
-        torso_lower.x = torso_lower.pivotPoint.x - torso_lower.width/2;
-        torso_lower.y = torso_lower.pivotPoint.y - 1;
-
-        // leg right
-        leg_right.x = leg_right.pivotPoint.x - leg_right.width/2;
-        leg_right.y = leg_right.pivotPoint.y;
-
-        leg_right = rotate_limb(leg_right,8,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
-
-        // calf right
-        calf_right.x = calf_right.pivotPoint.x - calf_right.width/2;
-        calf_right.y = calf_right.pivotPoint.y;
-
-        calf_right = rotate_limb(calf_right,0,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
-
-        // foot right
-        foot_right.x = foot_right.pivotPoint.x - foot_right.width/2 - foot_right.width/2;
-        foot_right.y = foot_right.pivotPoint.y;
-
-        foot_right = rotate_limb(foot_right,0,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
-
-        // leg left
-        leg_left.x = leg_left.pivotPoint.x - leg_left.width/2;
-        leg_left.y = leg_left.pivotPoint.y;
-
-        leg_left = rotate_limb(leg_left,-8,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
-
-        // calf left
-        calf_left.x = calf_left.pivotPoint.x - calf_left.width/2;
-        calf_left.y = calf_left.pivotPoint.y;
-
-        calf_left = rotate_limb(calf_left,0,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
-
-        // foot left
-        foot_left.x = foot_left.pivotPoint.x;
-        foot_left.y = foot_left.pivotPoint.y;
-
-        foot_left = rotate_limb(foot_left,0,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+        /*System.out.println("torsoX: " + torso.x);
+        System.out.println("targetX: " + targetX);*/
     }
 
-    @Override
-    public void update_pivotPoints() {
-
-        torso.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + torso.height/2);
-
-        head.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + head.height*4/17);
-
-        // right arm
-        arm_right.pivotPoint.setLocation(torso.x + arm_right.width/5,torso.y + arm_right.height/6);
-
-        // right forearm
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess || inLeapAttackProcess){
-            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
-        }
-        /*else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
-            forearm_right.pivotPoint.setLocation(torso.x + forearm_right.width*7/30,torso.y + forearm_right.height);
-        }*/
-        else {
-            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
-        }
-
-        // left arm
-        arm_left.pivotPoint.setLocation(torso.x + torso.width - arm_left.width/5,torso.y + arm_left.height/6);
-
-        // left forearm
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
-            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
-        }
-        else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
-            forearm_left.pivotPoint.setLocation(torso.x + torso.width - forearm_left.width*7/30,torso.y + forearm_left.height);
-        }
-        else {
-            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
-        }
-
-        // torso lower
-        if (inForwardWalkingProcess){
-            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2-2,torso.y + torso.height);
-        }
-        else if (inBackwardWalkingProcess) {
-            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2+2,torso.y + torso.height);
-        }
-
-        else {
-            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2,torso.y + torso.height);
-        }
-
-        // right leg
-        if (inLeapAttackProcess){
-            leg_right.pivotPoint.setLocation(torso.x + leg_right.width*25/20,torso.y + torso.height*9/10);
+    public boolean canLandLeapAttack(Entity enemy){
+        if (enemy != null){
+            double dx = enemy.torso.x - (hitbox.x - hitbox.width);
+            double dy = enemy.torso.y - hitbox.y;
+            if (Math.sqrt(dx * dx + dy * dy) <= stepSize){
+                return true;
+            }
+            else{
+                return false;
+            }
         }
         else{
-            leg_right.pivotPoint.setLocation(torso.x + leg_right.width,torso.y + torso.height);
+            return false;
         }
+    }
 
-        // right calf
-        if (inForwardWalkingProcess || inBackwardWalkingProcess){
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width + calf_right.width/5,leg_right.y + leg_right.height - leg_right.height/8);
-        }
-        else if (inLeapAttackProcess){
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width*30/20,leg_right.y + leg_right.height - leg_right.height/8);
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width*23/20,leg_right.y + leg_right.height - leg_right.height/8);
-        }
-        else {
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
-        }
+    public void adjustLeapAttackAnimations(){
+        animationSpeed = 1.0;
+        double duration = 1700.0; // Time in seconds to reach targetX TRY 1700
 
-        // right foot
-        if (inForwardWalkingProcess || inBackwardWalkingProcess){
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*9/10 + foot_right.width*3/10,calf_right.y + calf_right.height - calf_right.height/8);
-        }
-        else if (inLeapAttackProcess){
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*30/20,calf_right.y + calf_right.height - calf_right.height/14);
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*25/20,calf_right.y + calf_right.height - calf_right.height*8/30);
-        }
-        else {
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
-        }
+        double distance = Math.abs(targetX - torso.x);
+        movementSpeed = distance / duration;
 
-        // left leg
-        leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width,torso.y + torso.height);
-
-        // left calf
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*6/5,leg_left.y + leg_left.height - leg_left.height/8);
-        }
-        else {
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
-        }
-
-        // left foot
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*12/10,calf_left.y + calf_left.height - calf_left.height/8);
-        }
-        else {
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
-        }
-
+        // Adjust movementSpeed based on the desired scaling
+        double scalingFactor = 11.76; // Adjust this value to control the scaling WHEN DURATION GOES DOWN, THIS SHOULD GO UP ANIMASYON VE VARIŞ SÜRESİNİ EŞİTLEMEK İÇİN
+        movementSpeed *= scalingFactor;
     }
 
     @Override
@@ -348,9 +229,9 @@ public class Enemy extends Entity{
 
         animateBreathing();
 
-        updateAttributes();
+        //setAttributes();
 
-        fixPosWhenCollide(gp.player);
+        //fixPosWhenCollide(gp.player);
 
         hitbox.x = (int) (torso.x-gp.tileSize*18);
         hitbox.y = gp.tileSize*225;
@@ -471,6 +352,17 @@ public class Enemy extends Entity{
 
             // leap attack
             if (actionLeapAttackExecuted){
+                if (willCollidePlayer(gp.player)){
+                    targetX = (float) gp.currentEnemy.torso.x;
+                    System.err.println("AAAAAA");
+                }
+                else if (!willCollidePlayer(gp.player)){
+                    targetX = (float) (torso.x - stepSize);
+                    System.err.println("AAAAAA");
+                }
+
+                adjustLeapAttackAnimations();
+
                 inLeapAttackProcess = true;
                 actionLeapAttackExecuted = false;
 
@@ -479,15 +371,22 @@ public class Enemy extends Entity{
 
             if (inLeapAttackProcess){
                 if (leapAttackProcessJustStarted){
-                    destinationX = (float) (torso.x - stepSize);
+                    //destinationX = (float) (torso.x - stepSize);
                     leapAttackProcessJustStarted = false;
                 }
 
-                attackLeapingProcessStart(gp.player,destinationX);
+                attackLeapingProcessStart(gp.player,targetX);
             }
 
         }
 
+    }
+
+    public boolean willCollidePlayer(Player enemy){
+        if (torso.x - stepSize <= enemy.torso.x){
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -873,6 +772,9 @@ public class Enemy extends Entity{
 
         g2.drawLine((int)foot_left.pivotPoint.x,(int)foot_left.pivotPoint.y,(int)foot_left.pivotPoint.x,(int)foot_left.pivotPoint.y);
 
+        g2.setColor(Color.red);
+        g2.drawLine((int)torso.x + (int)torso.width/2,(int)torso.y,(int)torso.x + (int)torso.width/2,(int)torso.y);
+
         g2.setColor(new Color(255,0,0));
         g2.fill(hitbox);
     }
@@ -972,6 +874,267 @@ public class Enemy extends Entity{
         g2d.setTransform(originalTransform);
     }
 
+    @Override
+    public void update_entityPart_positions() {
+
+        head.x = head.pivotPoint.x - head.width/2;
+        head.y = head.pivotPoint.y - head.height;
+
+        // arm right
+        arm_right.x = arm_right.pivotPoint.x - arm_right.width*17/20;
+        arm_right.y = arm_right.pivotPoint.y;
+
+        arm_right = rotate_limb(arm_right,0,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+
+        // forearm right
+        forearm_right.x = forearm_right.pivotPoint.x - forearm_right.width*8/20;
+        forearm_right.y = forearm_right.pivotPoint.y;
+
+        forearm_right = rotate_limb(forearm_right,0,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+
+        // arm left
+        arm_left.x = arm_left.pivotPoint.x - arm_left.width*3/20;
+        arm_left.y = arm_left.pivotPoint.y;
+
+        arm_left = rotate_limb(arm_left,0,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+
+        // forearm left
+        forearm_left.x = forearm_left.pivotPoint.x - forearm_left.width*12/20;
+        forearm_left.y = forearm_left.pivotPoint.y;
+
+        forearm_left = rotate_limb(forearm_left,0,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+
+        // torso lower
+        torso_lower.x = torso_lower.pivotPoint.x - torso_lower.width/2;
+        torso_lower.y = torso_lower.pivotPoint.y - 1;
+
+        // leg right
+        leg_right.x = leg_right.pivotPoint.x - leg_right.width/2;
+        leg_right.y = leg_right.pivotPoint.y;
+
+        leg_right = rotate_limb(leg_right,8,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+
+        // calf right
+        calf_right.x = calf_right.pivotPoint.x - calf_right.width/2;
+        calf_right.y = calf_right.pivotPoint.y;
+
+        calf_right = rotate_limb(calf_right,0,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+
+        // foot right
+        foot_right.x = foot_right.pivotPoint.x - foot_right.width/2 - foot_right.width/2;
+        foot_right.y = foot_right.pivotPoint.y;
+
+        foot_right = rotate_limb(foot_right,0,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+
+        // leg left
+        leg_left.x = leg_left.pivotPoint.x - leg_left.width/2;
+        leg_left.y = leg_left.pivotPoint.y;
+
+        leg_left = rotate_limb(leg_left,-8,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+
+        // calf left
+        calf_left.x = calf_left.pivotPoint.x - calf_left.width/2;
+        calf_left.y = calf_left.pivotPoint.y;
+
+        calf_left = rotate_limb(calf_left,0,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+
+        // foot left
+        foot_left.x = foot_left.pivotPoint.x;
+        foot_left.y = foot_left.pivotPoint.y;
+
+        foot_left = rotate_limb(foot_left,0,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+    }
+
+    @Override
+    public void update_pivotPoints() {
+
+        torso.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + torso.height/2);
+
+        head.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + head.height*4/17);
+
+        // right arm
+        arm_right.pivotPoint.setLocation(torso.x + arm_right.width/5,torso.y + arm_right.height/6);
+
+        // right forearm
+        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess || inLeapAttackProcess){
+            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+        }
+        /*else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
+            forearm_right.pivotPoint.setLocation(torso.x + forearm_right.width*7/30,torso.y + forearm_right.height);
+        }*/
+        else {
+            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+        }
+
+        // left arm
+        arm_left.pivotPoint.setLocation(torso.x + torso.width - arm_left.width/5,torso.y + arm_left.height/6);
+
+        // left forearm
+        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
+            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+        }
+        else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
+            forearm_left.pivotPoint.setLocation(torso.x + torso.width - forearm_left.width*7/30,torso.y + forearm_left.height);
+        }
+        else {
+            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+        }
+
+        // torso lower
+        if (inForwardWalkingProcess){
+            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2-2,torso.y + torso.height);
+        }
+        else if (inBackwardWalkingProcess) {
+            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2+2,torso.y + torso.height);
+        }
+
+        else {
+            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2,torso.y + torso.height);
+        }
+
+        // right leg
+        if (inLeapAttackProcess){
+            leg_right.pivotPoint.setLocation(torso.x + leg_right.width*25/20,torso.y + torso.height*9/10);
+        }
+        else{
+            leg_right.pivotPoint.setLocation(torso.x + leg_right.width,torso.y + torso.height);
+        }
+
+        // right calf
+        if (inForwardWalkingProcess || inBackwardWalkingProcess){
+            calf_right.pivotPoint.setLocation(torso.x + calf_right.width + calf_right.width/5,leg_right.y + leg_right.height - leg_right.height/8);
+        }
+        else if (inLeapAttackProcess){
+            calf_right.pivotPoint.setLocation(torso.x + calf_right.width*30/20,leg_right.y + leg_right.height - leg_right.height/8);
+        }
+        else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
+            calf_right.pivotPoint.setLocation(torso.x + calf_right.width*23/20,leg_right.y + leg_right.height - leg_right.height/8);
+        }
+        else {
+            calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
+        }
+
+        // right foot
+        if (inForwardWalkingProcess || inBackwardWalkingProcess){
+            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*9/10 + foot_right.width*3/10,calf_right.y + calf_right.height - calf_right.height/8);
+        }
+        else if (inLeapAttackProcess){
+            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*30/20,calf_right.y + calf_right.height - calf_right.height/14);
+        }
+        else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
+            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*25/20,calf_right.y + calf_right.height - calf_right.height*8/30);
+        }
+        else {
+            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
+        }
+
+        // left leg
+        leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width,torso.y + torso.height);
+
+        // left calf
+        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
+            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*6/5,leg_left.y + leg_left.height - leg_left.height/8);
+        }
+        else {
+            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
+        }
+
+        // left foot
+        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
+            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*12/10,calf_left.y + calf_left.height - calf_left.height/8);
+        }
+        else {
+            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
+        }
+
+
+    }
+
+    public void attackLight(Player enemy){
+        if (attackConditionCalculator(enemy)){
+            enemy.HP = enemy.HP - hitDamage;
+        }
+    }
+
+    public void lightAttackProcessStart(double rotUp,double rotDown){
+        // kol en tepedeyken vurması için
+        if (rotUp >= 80 && rotDown == 77.5){
+            attackLight(gp.player);
+        }
+        // animasyonun bitmesini bekle
+        if (rotUp <= 80 || rotDown >= 20){
+            animateArmAttackLight();
+        }
+        else{
+            inGoUpArmLightAttack = false;
+            inGoDownArmLightAttack = false;
+        }
+        /*if (lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle <= 20 || lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle >= 8){
+            animateLegAttackLight();
+        }*/
+        // bittiğinde gerekli ayarları çek
+        if (/*rotUp <= -80 && rotDown >= -20*/inGoUpArmLightAttack == false && inGoDownArmLightAttack == false /*&& lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle >= 20 && lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle <= 8*/){
+            inGoUpArmLightAttack = false;
+            inGoDownArmLightAttack = false;
+            /*inLegLeftRotateForwardUpAttackLight = false;
+            inLegLeftRotateBackwardDownAttackLight = false;*/
+            lightAttackAnim_ArmGoUpStartingPosAngle = 20;
+            lightAttackAnim_ArmGoDownStartingPosAngle = 80;
+            /*lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle = 8;
+            lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle = 20;*/
+            played = true;
+            gp.determineTurn();
+            inLightAttackProcess = false;
+        }
+    }
+
+    public void moveForwardProcessStart(float destinationX){
+
+        if (this.torso.x >= destinationX){
+            torso.setRect(torso.x - 1, torso.getY(), torso.getWidth(), torso.getHeight());
+
+            animateArmWalking();
+            animateLegWalking();
+        }
+        else{
+            inForwardSwingArm = false;
+            inBackwardSwingArm = false;
+            inForwardSwingLeg = false;
+            inBackwardSwingLeg = false;
+            walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
+            walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
+            walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
+            walkingAnim_LegsSwingForwardStartingPosAngle = 10;
+            System.out.println("Action Move Forward " + randomChoice);
+            played = true;
+            gp.determineTurn();
+            inForwardWalkingProcess = false;
+        }
+    }
+
+    public void moveBackwardProcessStart(float destinationX){
+        if (this.torso.x <= destinationX){
+            torso.setRect(torso.x + 1, torso.getY(), torso.getWidth(), torso.getHeight());
+
+            animateArmWalking();
+            animateLegWalking();
+        }
+        else{
+            inForwardSwingArm = false;
+            inBackwardSwingArm = false;
+            inForwardSwingLeg = false;
+            inBackwardSwingLeg = false;
+            walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
+            walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
+            walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
+            walkingAnim_LegsSwingForwardStartingPosAngle = 10;
+            System.out.println("Action Move Backward " + randomChoice);
+            played = true;
+            gp.determineTurn();
+            inBackwardWalkingProcess = false;
+        }
+    }
+
     public void breathingAnim_ArmMovement(){
         // reset animation stuff here everyloop when animation is not over.
         if (breathingAnim_armGoUpStartingPosAngle > 4 && breathingAnim_armGoDownStartingPosAngle < 1){
@@ -1046,91 +1209,6 @@ public class Enemy extends Entity{
                 inBreatheIn = true;
                 inBreatheOut = false;
             }
-        }
-    }
-
-    public void attackLight(Player enemy){
-        if (attackConditionCalculator(enemy)){
-            enemy.HP = enemy.HP - hitDamage;
-        }
-    }
-
-    public void lightAttackProcessStart(double rotUp,double rotDown){
-        // kol en tepedeyken vurması için
-        if (rotUp >= 80 && rotDown == 77.5){
-            attackLight(gp.player);
-        }
-        // animasyonun bitmesini bekle
-        if (rotUp <= 80 || rotDown >= 20){
-            animateArmAttackLight();
-        }
-        else{
-            inGoUpArmLightAttack = false;
-            inGoDownArmLightAttack = false;
-        }
-        /*if (lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle <= 20 || lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle >= 8){
-            animateLegAttackLight();
-        }*/
-        // bittiğinde gerekli ayarları çek
-        if (/*rotUp <= -80 && rotDown >= -20*/inGoUpArmLightAttack == false && inGoDownArmLightAttack == false /*&& lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle >= 20 && lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle <= 8*/){
-            inGoUpArmLightAttack = false;
-            inGoDownArmLightAttack = false;
-            /*inLegLeftRotateForwardUpAttackLight = false;
-            inLegLeftRotateBackwardDownAttackLight = false;*/
-            lightAttackAnim_ArmGoUpStartingPosAngle = 20;
-            lightAttackAnim_ArmGoDownStartingPosAngle = 80;
-            /*lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle = 8;
-            lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle = 20;*/
-            played = true;
-            gp.determineTurn();
-            inLightAttackProcess = false;
-        }
-    }
-
-    public void moveForwardProcessStart(float destinationX){
-
-        if (this.torso.x >= destinationX){
-            this.torso.x -= 1;
-
-            animateArmWalking();
-            animateLegWalking();
-        }
-        else{
-            inForwardSwingArm = false;
-            inBackwardSwingArm = false;
-            inForwardSwingLeg = false;
-            inBackwardSwingLeg = false;
-            walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
-            walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
-            walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
-            walkingAnim_LegsSwingForwardStartingPosAngle = 10;
-            System.out.println("Action Move Forward " + randomChoice);
-            played = true;
-            gp.determineTurn();
-            inForwardWalkingProcess = false;
-        }
-    }
-
-    public void moveBackwardProcessStart(float destinationX){
-        if (this.torso.x <= destinationX){
-            this.torso.x += 1;
-
-            animateArmWalking();
-            animateLegWalking();
-        }
-        else{
-            inForwardSwingArm = false;
-            inBackwardSwingArm = false;
-            inForwardSwingLeg = false;
-            inBackwardSwingLeg = false;
-            walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
-            walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
-            walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
-            walkingAnim_LegsSwingForwardStartingPosAngle = 10;
-            System.out.println("Action Move Backward " + randomChoice);
-            played = true;
-            gp.determineTurn();
-            inBackwardWalkingProcess = false;
         }
     }
 
@@ -1277,10 +1355,12 @@ public class Enemy extends Entity{
 
     public void attackLeapingProcessStart(Player entity, float destinationX){
 
-        if (this.torso.x >= destinationX){
-            this.torso.x -= 1;
+        if (torso.x >= destinationX){
+            if (torso.x <= destinationX && !torso.intersects((entity.torso.x - entity.torso.width/2),entity.torso.y,1,1)){
+                torso.setRect(torso.x - 1, torso.getY(), torso.getWidth(), torso.getHeight());
 
-            animateAttackLeap();
+                animateAttackLeap();
+            }
         }
         else{
             if (attackConditionCalculator(entity)){
@@ -1307,7 +1387,7 @@ public class Enemy extends Entity{
 
         if (leapAttackAnim_ArmAttackDownStartingPosAngle <= 70){
             inArmLeapAttackDown = true;
-            leapAttackAnim_ArmAttackDownStartingPosAngle += 2.5;
+            leapAttackAnim_ArmAttackDownStartingPosAngle += 2.5*animationSpeed;
 
             // update pivot points
             forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, leapAttackAnim_ArmAttackDownStartingPosAngle);
@@ -1320,7 +1400,7 @@ public class Enemy extends Entity{
         else if (leapAttackAnim_ArmAttackUpStartingPosAngle >= 0){
             inArmLeapAttackDown = false;
             inArmLeapAttackUp = true;
-            leapAttackAnim_ArmAttackUpStartingPosAngle -= 1;
+            leapAttackAnim_ArmAttackUpStartingPosAngle -= 1*animationSpeed;
 
             // update pivot points
             forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, leapAttackAnim_ArmAttackUpStartingPosAngle);
@@ -1335,7 +1415,7 @@ public class Enemy extends Entity{
 
         if (leapAttackAnim_TorsoLeanForwardStartingPosAngle >= -20){
             inForwardLeanTorso = true;
-            leapAttackAnim_TorsoLeanForwardStartingPosAngle -= 0.2;
+            leapAttackAnim_TorsoLeanForwardStartingPosAngle -= 0.2*animationSpeed;
 
             // update pivot points
             torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
@@ -1371,7 +1451,7 @@ public class Enemy extends Entity{
         else if (leapAttackAnim_TorsoLeanBackwardStartingPosAngle <= 0){
             inForwardLeanTorso = false;
             inBackwardLeanTorso = true;
-            leapAttackAnim_TorsoLeanBackwardStartingPosAngle += 0.2;
+            leapAttackAnim_TorsoLeanBackwardStartingPosAngle += 0.2*animationSpeed;
 
             if (leapAttackAnim_TorsoLeanForwardStartingPosAngle <= -20){
                 animateArmAttackLeap();
@@ -1409,14 +1489,7 @@ public class Enemy extends Entity{
         }
     }
 
-    public boolean willCollidePlayer(Player player){
-        float xDifference = (float) Math.abs(player.torso.x - torso.x - stepSize);
 
-        if (xDifference <= gp.tileSize*13){
-            return true;
-        }
-        return false;
-    }
 
     public boolean attackConditionCalculator(Player player){
         if (hitbox.intersects(player.torso)){
@@ -1448,7 +1521,7 @@ public class Enemy extends Entity{
         else{
             canMoveBackward = true;
         }
-        System.out.println("can move backward: " + canMoveBackward);
+        //System.out.println("can move backward: " + canMoveBackward);
 
         if (torso.x <= 40){
             torso.x = 50;
@@ -1459,7 +1532,7 @@ public class Enemy extends Entity{
         else{
             canMoveForward = true;
         }
-        System.out.println("can move forward: " + canMoveForward);
+        //System.out.println("can move forward: " + canMoveForward);
     }
 
     public void resetWalkingAnimationAndSwitchTurns(){

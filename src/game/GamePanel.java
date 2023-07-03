@@ -54,7 +54,6 @@ public class GamePanel extends JPanel implements Runnable{
     // handlers and thread
     public KeyHandler keyH = new KeyHandler(this);
     public StateNMouseHandler mouseH = new StateNMouseHandler(this);
-    public EventHandler eventH = new EventHandler(this);
     Thread gameThread;
     public Graphics2D g2;
 
@@ -83,7 +82,7 @@ public class GamePanel extends JPanel implements Runnable{
     public final int dialogueState = 4;
     public final int inVillageState = 5;
     public final int levelUpState = 6;
-    public String turn;
+    public String turn = "player";
 
     // GENERATORS
     public BattleCreator battleCreator;
@@ -172,10 +171,13 @@ public class GamePanel extends JPanel implements Runnable{
         }
     }
 
-    private double getDistance(double x1, double y1, double x2, double y2) {
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        return Math.sqrt(dx * dx + dy * dy);
+    public double getDistance(Player player, Enemy enemy) {
+        if (enemy != null){
+            double dx = (enemy.torso.x-enemy.torso.width/2)- (player.torso.x+player.torso.width/2);
+            double dy = enemy.torso.y - player.torso.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        return 0;
     }
 
     public void update(){
@@ -192,38 +194,6 @@ public class GamePanel extends JPanel implements Runnable{
 
         else if (gameState == battleState){
 
-            if (areInBattle()){
-                // camera
-                zoomOutOnHittingScreenBorder();
-
-                eventH.update();
-
-                if (!battleOngoing()){
-                    // if enough xp to level up, go to level up screen
-                    // else go directly to town screen
-                    if (eventH.playerWon()){
-                        pastEnemies.add(currentEnemy);
-                        currentEnemy = null;
-                        eventH.addXpToPlayer(player);
-
-                        System.out.println(player.level);
-                        System.out.println(player.xp);
-
-                        if (eventH.playerLevelUp(player)){
-                            gameState = levelUpState;
-                            levelUpGUI.justEnteredState = true;
-                        }
-                        else {
-                            gameState = inVillageState;
-                        }
-
-                    }
-                    else if (!eventH.playerWon()){
-                        System.exit(0);
-                    }
-                }
-            }
-
             // create the new enemy once battleState has been entered first time
             if (justEnteredBattle){
                 turn = "player";
@@ -236,17 +206,48 @@ public class GamePanel extends JPanel implements Runnable{
                 justEnteredBattle = false;
             }
 
-            player.update();
-            player.gui.update();
-            actionsGUI.update();
+            if (areInBattle()){
+                // camera
+                zoomOutOnHittingScreenBorder();
 
-            if (currentEnemy != null){
-                currentEnemy.update();
-                currentEnemy.gui.update();
+                //System.out.println(entityDead());
+                entityDead();
+
+                if (!battleOngoing()){
+                    // if enough xp to level up, go to level up screen
+                    // else go directly to town screen
+                    if (playerWon()){
+                        pastEnemies.add(currentEnemy);
+                        currentEnemy = null;
+                        addXpToPlayer(player);
+
+                        System.out.println(player.level);
+                        System.out.println(player.xp);
+
+                        if (playerLevelUp(player)){
+                            gameState = levelUpState;
+                            levelUpGUI.justEnteredState = true;
+                        }
+                        else {
+                            gameState = inVillageState;
+                        }
+
+                    }
+                    else if (!playerWon()){
+                        System.exit(0);
+                    }
+                }
+                else if (battleOngoing()){
+                    player.update();
+                    player.gui.update();
+                    actionsGUI.update();
+
+                    if (currentEnemy != null){
+                        currentEnemy.update();
+                        currentEnemy.gui.update();
+                    }
+                }
             }
-
-            eventH.update();
-
         }
 
         else if (gameState == levelUpState){
@@ -293,7 +294,7 @@ public class GamePanel extends JPanel implements Runnable{
             int translationX = 0;
             int translationY = 0;
 
-            System.out.println(zoomedInOnPlayer);
+            //System.out.println(zoomedInOnPlayer);
 
             if (zoomLevel < 1){
                 translationX = (int) ((getWidth() - (arenaScreenWidth * zoomLevel)) / 2);
@@ -321,7 +322,7 @@ public class GamePanel extends JPanel implements Runnable{
 
             //entities
             // if its player's turn, draw player on top
-            if (turn.equals("player")){
+            if (turn.equals("player") && currentEnemy != null){
                 currentEnemy.draw(g2);
                 player.draw(g2);
             }
@@ -353,7 +354,9 @@ public class GamePanel extends JPanel implements Runnable{
 
             player.gui.draw(g2);
 
-            currentEnemy.gui.draw(g2);
+            if (currentEnemy != null){
+                currentEnemy.gui.draw(g2);
+            }
         }
 
         else if (gameState == levelUpState){
@@ -368,7 +371,7 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     public void zoomOutOnHittingScreenBorder(){
-        if (getDistance(player.torso.x,player.torso.y,currentEnemy.torso.x,currentEnemy.torso.y) > 500){
+        if (getDistance(player,currentEnemy) > 500){
             if (player.torso.x <= 700 || player.torso.x >= screenWidth + 630/*|| player.torso.y < 0 || player.torso.y >= screenHeight*/) {
                 if (zoomLevel > MIN_ZOOM_LEVEL_1) {
                     zoomLevel *= ZOOM_FACTOR; // Adjust the zoom level
@@ -407,7 +410,7 @@ public class GamePanel extends JPanel implements Runnable{
                 }
             }
         }
-        else if (getDistance(player.torso.x,player.torso.y,currentEnemy.torso.x,currentEnemy.torso.y) <= 500){
+        else if (getDistance(player,currentEnemy) <= 500){
             if (!hittingBorder1_player){
                 zoomLevel = 1.0;
                 zoomedInOnPlayer = true;
@@ -441,14 +444,73 @@ public class GamePanel extends JPanel implements Runnable{
     }
 
     public boolean areInBattle(){
-        return player.inBattle && currentEnemy != null && currentEnemy.inBattle;
+        return player.inBattle &&  currentEnemy != null && currentEnemy.inBattle;
     }
 
     public boolean battleOngoing(){
         if (areInBattle()){
-            return player.alive && currentEnemy != null && currentEnemy.alive;
+            return player.alive && currentEnemy.alive;
         }
         return false;
+    }
+
+    public String entityDead(){
+        if (player.HP <= 0){
+            player.alive = false;
+            player.inBattle = false;
+            return "player";
+        }
+        else if (currentEnemy != null && currentEnemy.HP <= 0){
+            currentEnemy.alive = false;
+            currentEnemy.inBattle = false;
+            return "enemy";
+        }
+        return "null";
+    }
+
+    public boolean playerWon(){
+        if (player.HP > 0 && currentEnemy.HP <= 0){
+            return true;
+        }
+        return false;
+    }
+
+    public boolean playerLevelUp(Player player){
+        if (player.xp >= levelSystem.xp_for_level1 && !player.level1Reached){
+            player.level = 1;
+            player.level1Reached = true;
+            return true;
+        }
+        else if (player.xp >= levelSystem.xp_for_level2 && !player.level2Reached){
+            player.level = 2;
+            player.level2Reached = true;
+            return true;
+        }
+        else if (player.xp >= levelSystem.xp_for_level3 && !player.level3Reached){
+            player.level = 3;
+            player.level3Reached = true;
+            return true;
+        }
+        else if (player.xp >= levelSystem.xp_for_level4 && !player.level4Reached){
+            player.level = 4;
+            player.level4Reached = true;
+            return true;
+        }
+        else if (player.xp >= levelSystem.xp_for_level5 && !player.level5Reached){
+            player.level = 5;
+            player.level5Reached = true;
+            return true;
+        }
+        else if (player.xp >= levelSystem.xp_for_level6 && !player.level6Reached){
+            player.level = 6;
+            player.level6Reached = true;
+            return true;
+        }
+        return false;
+    }
+
+    public void addXpToPlayer(Player player){
+        player.xp += 10;
     }
 
     public BufferedImage scaleImage(BufferedImage original, int width, int height){

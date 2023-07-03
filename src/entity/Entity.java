@@ -10,78 +10,68 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class Entity {
     GamePanel gp;
 
+    // gui
     public EntityGUI gui;
 
+    // battle
     public String side;
-    public boolean alive;
-
-    public float screenX;
-    public float screenY;
 
     // ENTITY PARTS
-    public ArrayList<Shape> bodyParts = new ArrayList<>();
-
     public EntityPart head;
-
     public EntityPart torso;
-
     public EntityPart arm_right;
-
     public EntityPart forearm_right;
-
     public EntityPart arm_left;
-
     public EntityPart forearm_left;
-
     public EntityPart torso_lower;
-
     public EntityPart leg_right;
-
     public EntityPart calf_right;
-
     public EntityPart leg_left;
-
     public EntityPart calf_left;
-
     public EntityPart foot_right;
-
     public EntityPart foot_left;
-
     public Rectangle hitbox;
 
     // stats
     public int level;
 
-    public int strength;
-    public int magic;
-    public int dexterity;
-    public int vitality;
-    public int offense;
-    public int protection;
-    public int charisma;
-    public int stamina;
+    public double strength;
+    public double stamina;
+    public double dexterity;
+    public double vitality;
+    public double offense;
+    public double defence;
+    public double aura;
+    public double magic;
 
     // attributes
     public String name;
+    public int height;
 
-    public int baseHP = 20;
-    public int HP;
-
-    public int baseHitDamage = 2;
-    public int hitDamage;
-
-    public float baseStepSize;
-    public float stepSize;
-
-    public double size_multiplier = 1;
+    // strength attributes
+    public double baseHitDamage = 2;
+    public double hitDamage;
     public double heightChange = 0;
 
+    // vitality attributes
+    public double baseHP = 20;
+    public double HP;
+
+    // dexterity attributes
+    public double baseStepSize;
+    public double stepSize;
+    public double movementSpeed;
+
+    // stamina attributes
+    public float energy;
+
     // boolean values
+    public boolean alive;
+
     public boolean played;
 
     public boolean canMoveForward;
@@ -92,16 +82,13 @@ public class Entity {
     public boolean inBattle;
 
     // ANIMATION
-    public long thinkTimer = 0L;
-    public long thinkTime = 200L;
-
     public double walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
     public double walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
 
     public double walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
     public double walkingAnim_LegsSwingForwardStartingPosAngle = 10;
 
-    public float destinationX;
+    public float targetX;
 
     public boolean inForwardSwingArm;
     public boolean inBackwardSwingArm;
@@ -133,27 +120,20 @@ public class Entity {
     public boolean lightAttackProcessJustStarted;
     public boolean inLightAttackProcess;
 
-
     public boolean leapAttackProcessJustStarted;
     public boolean inLeapAttackProcess;
 
     public Entity(GamePanel gp){
         this.gp = gp;
-        screenX = gp.screenWidth/2 - (gp.tileSize/2); // center of the screen showing currently
-        screenY = gp.screenHeight/2 - (gp.tileSize/2); // center of the screen showing currently
 
         // strength defines hitDamage
         strength = 1;
         hitDamage = baseHitDamage + strength;
 
-        // magicka defines magicDamage
-        // şimdilik atla
-        magic = 1;
-
         // agility defines stepSize
         dexterity = 1;
         baseStepSize = gp.tileSize*26;
-        stepSize = (int) (baseStepSize + (float) (dexterity*gp.tileSize)/12);
+        stepSize = (int) (baseStepSize + (float) (dexterity*gp.tileSize)/10);
 
         // vitality defines HP
         vitality = 1;
@@ -165,15 +145,19 @@ public class Entity {
 
         // defence defines chances of blocking enemy attack
         // şimdilik atla
-        protection = 1;
+        defence = 1;
 
         // charisma reduces items prices that are in market,
         // şimdilik atla
-        charisma = 1;
+        aura = 1;
 
         // stamina defines stamina point
         // şimdilik atla
         stamina = 1;
+
+        // magicka defines magicDamage
+        // şimdilik atla
+        magic = 1;
 
         name = "Can";
         canAttack = false;
@@ -203,20 +187,6 @@ public class Entity {
 
     }
 
-    public void updateAttributes(){
-        hitDamage = baseHitDamage + strength;
-
-        //stepSize = (int) (baseStepSize + (float) (agility*gp.tileSize)/12);
-
-        if (!inBattle){
-            HP = vitality*2 + baseHP;
-        }
-    }
-
-    /*public void attackLight(Entity entity){
-        entity.HP -= hitDamage;
-    }*/
-
     public void moveForwardProcessStart(float destinationX){
 
     }
@@ -229,7 +199,6 @@ public class Entity {
 
     }
 
-
     public void fixPosWhenCollide(Entity entity){
 
     }
@@ -239,7 +208,6 @@ public class Entity {
     }
 
     public void update_pivotPoints(){
-
 
     }
 

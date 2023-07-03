@@ -23,7 +23,7 @@ public class EntityGUI extends AABGUI {
         super(gp);
         this.gp = gp;
         this.entity = entity;
-        entityHP = Integer.toString(entity.HP);
+        entityHP = Integer.toString((int) entity.HP);
         entityName = entity.name;
 
         if (type.equals("player")){
@@ -41,7 +41,7 @@ public class EntityGUI extends AABGUI {
     }
 
     public void update(){
-        entityHP = Integer.toString(entity.HP);
+        entityHP = Integer.toString((int) entity.HP);
         entityName = entity.name;
     }
 

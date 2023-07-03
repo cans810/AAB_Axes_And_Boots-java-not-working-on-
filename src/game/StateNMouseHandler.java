@@ -91,6 +91,14 @@ public class StateNMouseHandler implements MouseListener {
                 else if (gp.newCharacterScreenGUI.decreaseVitalityButton.intersects(x, y, 1, 1)){
                     gp.newCharacterScreenGUI.increaseVitalityButtonHit = 0;
                 }
+
+                // dexterity button
+                if (gp.newCharacterScreenGUI.increaseDexterityButton.intersects(x, y, 1, 1)){
+                    gp.newCharacterScreenGUI.increaseDexterityButtonHit = 1;
+                }
+                else if (gp.newCharacterScreenGUI.decreaseDexterityButton.intersects(x, y, 1, 1)){
+                    gp.newCharacterScreenGUI.increaseDexterityButtonHit = 0;
+                }
             }
         }
         else if (gp.gameState == gp.levelUpState){
@@ -114,6 +122,14 @@ public class StateNMouseHandler implements MouseListener {
             }
             else if (gp.levelUpGUI.decreaseVitalityButton.intersects(x, y, 1, 1)){
                 gp.levelUpGUI.increaseVitalityButtonHit = 0;
+            }
+
+            // dexterity button
+            if (gp.levelUpGUI.increaseDexterityButton.intersects(x, y, 1, 1)){
+                gp.levelUpGUI.increaseDexterityButtonHit = 1;
+            }
+            else if (gp.levelUpGUI.decreaseDexterityButton.intersects(x, y, 1, 1)){
+                gp.levelUpGUI.increaseDexterityButtonHit = 0;
             }
         }
         else if (gp.gameState == gp.inVillageState){
