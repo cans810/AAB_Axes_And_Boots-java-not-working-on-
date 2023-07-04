@@ -16,7 +16,6 @@ public class Player extends Entity{
     // ATTRIBUTES-STATS
     public int xp;
 
-
     // action selected booleans
     public boolean moveForwardClicked;
     public boolean moveBackwardClicked;
@@ -154,9 +153,50 @@ public class Player extends Entity{
         foot_left.image = setupImage("/leftfoot",(int)foot_left.getBounds2D().getWidth(),(int)foot_left.getBounds2D().getHeight());
     }
 
+    public void updateEntitySize(double previousStrength, double newStrength) {
+        double sizeMultiplier;
+
+        //System.out.println(previousStrength-newStrength);
+
+        if (newStrength > previousStrength) {
+            // Increase size by 1.025 for each strength point added
+            sizeMultiplier = Math.pow(1.010, newStrength - previousStrength);
+        }
+        else if (newStrength <= previousStrength) {
+            // Decrease size by 0.975 for each strength point removed
+            sizeMultiplier = Math.pow(0.990, previousStrength - newStrength);
+        }
+        else {
+            // No change in strength, size remains the same
+            sizeMultiplier = 1.0;
+        }
+
+        setHeightInCm(sizeMultiplier);
+
+        growEntity(sizeMultiplier);
+    }
+
+    public String setSide(){
+        String newSide;
+
+        if (torso.x > gp.currentEnemy.torso.x){
+            newSide = "right";
+        }
+        else{
+            newSide = "left";
+        }
+        return newSide;
+    }
+
+    public void setHeightInCm(double sizeMultiplier){
+        double sizeIncrease = Math.floor((sizeMultiplier - 1.0) * 100) * 1.5;
+        heightInCm += sizeIncrease;
+    }
+
     public void updateAttributes(){
         // strength related
         hitDamage = baseHitDamage + strength;
+
         // grow entity when giving stats
 
         // vitality related
@@ -214,8 +254,8 @@ public class Player extends Entity{
             animationSpeed = maxAnimationSpeed - ((enemyDistance - minDistance) / (maxDistance - minDistance)) * (maxAnimationSpeed - minAnimationSpeed);
         }
 
-        System.out.println(dexterity);
-        System.out.println(willCollideEnemy(gp.currentEnemy));
+        //System.out.println(dexterity);
+        //System.out.println(willCollideEnemy(gp.currentEnemy));
     }
 
     public void adjustMoveForwardAnimations(){
@@ -253,15 +293,48 @@ public class Player extends Entity{
 
             animateBreathing();
 
+            //System.err.println("HEIGHT " + heightInCm);
+            //System.out.println("Side: " + side);
+
             //fixPosWhenCollide(gp.currentEnemy);
 
-            System.out.println("targetx: " +targetX);
-            System.out.println("x: " + torso.x);
-            System.err.println("movementSpeed: " + movementSpeed);
+            //System.out.println("targetx: " +targetX);
+            //System.out.println("x: " + torso.x);
+            //System.err.println("movementSpeed: " + movementSpeed);
 
-            hitbox.x = (int) (torso.x+gp.tileSize*16);
-            hitbox.y = gp.tileSize*225;
+            if (side.equals("left")){
+                hitbox.x = (int) (torso.x+torso.width);
+                hitbox.y = gp.tileSize*225;
+            }
+            else {
+                hitbox.x = (int) (torso.x-hitbox.width);
+                hitbox.y = gp.tileSize*225;
+            }
 
+
+            if (!gp.turn.equals("player")){
+                side = setSide();
+            }
+            if (!gp.turn.equals("player")){
+                if (side.equals("left")){
+                    leapAttackAnim_TorsoLeanForwardStartingPosAngle = 0;
+                    leapAttackAnim_TorsoLeanBackwardStartingPosAngle = 20;
+                    leapAttackAnim_ArmAttackDownStartingPosAngle = 0;
+                    leapAttackAnim_ArmAttackUpStartingPosAngle = -70;
+
+                    lightAttackAnim_ArmGoUpStartingPosAngle = -20;
+                    lightAttackAnim_ArmGoDownStartingPosAngle = -80;
+                }
+                else if (side.equals("right")){
+                    leapAttackAnim_TorsoLeanForwardStartingPosAngle = 0;
+                    leapAttackAnim_TorsoLeanBackwardStartingPosAngle = -20;
+                    leapAttackAnim_ArmAttackDownStartingPosAngle = 0;
+                    leapAttackAnim_ArmAttackUpStartingPosAngle = 70;
+
+                    lightAttackAnim_ArmGoUpStartingPosAngle = 20;
+                    lightAttackAnim_ArmGoDownStartingPosAngle = 80;
+                }
+            }
 
             if (attackConditionCalculator(gp.currentEnemy)){
                 canAttack = true;
@@ -292,7 +365,15 @@ public class Player extends Entity{
 
             if (inForwardWalkingProcess){
                 if (moveForwardProcessJustStarted){
-                    targetX = (float) (torso.x + stepSize);
+                    if (side.equals("left")){
+                        targetX = (float) (torso.x + stepSize);
+                        System.err.println("AAAAAAA");
+                    }
+                    else{
+                        targetX = (float) (torso.x - stepSize);
+                        System.err.println("XXXXXXXXXXXXXXXXXXXXXXXXX");
+
+                    }
                     adjustMoveForwardAnimations();
                     moveForwardProcessJustStarted = false;
                 }
@@ -311,7 +392,12 @@ public class Player extends Entity{
 
             if (inBackwardWalkingProcess){
                 if (moveBackwardProcessJustStarted){
-                    targetX = (float) (torso.x - stepSize);
+                    if (side.equals("left")){
+                        targetX = (float) (torso.x - stepSize);
+                    }
+                    else{
+                        targetX = (float) (torso.x + stepSize);
+                    }
                     adjustMoveForwardAnimations();
                     moveBackwardProcessJustStarted = false;
                 }
@@ -344,13 +430,25 @@ public class Player extends Entity{
 
             // leap attack
             if (leapAttackClicked){
-                if (willCollideEnemy(gp.currentEnemy)){
-                    targetX = (float) gp.currentEnemy.torso.x;
-                    System.err.println("AAAAAA");
+                if (side.equals("left")){
+                    if (willCollideEnemy(gp.currentEnemy)){
+                        targetX = (float) gp.currentEnemy.torso.x;
+                        //System.err.println("AAAAAA");
+                    }
+                    else if (!willCollideEnemy(gp.currentEnemy)){
+                        targetX = (float) (torso.x + stepSize);
+                        //System.err.println("AAAAAA");
+                    }
                 }
-                else if (!willCollideEnemy(gp.currentEnemy)){
-                    targetX = (float) (torso.x + stepSize);
-                    System.err.println("AAAAAA");
+                else if (side.equals("right")){
+                    if (willCollideEnemy(gp.currentEnemy)){
+                        targetX = (float) gp.currentEnemy.torso.x;
+                        //System.err.println("AAAAAA");
+                    }
+                    else if (!willCollideEnemy(gp.currentEnemy)){
+                        targetX = (float) (torso.x - stepSize);
+                        //System.err.println("AAAAAA");
+                    }
                 }
 
                 adjustLeapAttackAnimations();
@@ -384,363 +482,684 @@ public class Player extends Entity{
         //g2.setColor(new Color(0,60,35));
         //g2.fill(leg_left);
 
-        // left leg
-        if (inForwardSwingLeg){
-            drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle,leg_left.image,"leg_left");
-        }
-        else if (inBackwardSwingLeg){
-            drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,leg_left.image,"leg_left");
-        }
-        else if (inForwardLeanTorso){
-            // if 1 animation loop is done, reset to normal drawing of leg
-            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+        if (side.equals("left")){
+            // left leg
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inForwardLeanTorso){
+                // if 1 animation loop is done, reset to normal drawing of leg
+                if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+                    drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-8,leg_left.image,"leg_left");
+                }
+                else{
+                    drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_left.image,"leg_left");
+                }
+            }
+            else if (inBackwardLeanTorso){
+                // if 1 animation loop is done, reset to normal drawing of leg
+                if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+                    drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-8,leg_left.image,"leg_left");
+                }
+                else{
+                    drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_left.image,"leg_left");
+                }
+            }
+            else if(inLegLeftRotateForwardUpAttackLight){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else{
                 drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-8,leg_left.image,"leg_left");
             }
-            else{
-                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_left.image,"leg_left");
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(calf_left);
+
+            // left calf
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, calf_left.image, "calf_left");
             }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if(inLegLeftRotateForwardUpAttackLight){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else{
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,0,calf_left.image,"calf_left");
+            }
+
+            // left foot
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, foot_left.image, "foot_left");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else if(inLegLeftRotateForwardUpAttackLight){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else{
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,0,foot_left.image,"foot_left");
+            }
+
+            //g2.setColor(new Color(0,60,35));
+            //g2.fill(arm_left);
+
+            // left arm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-walkingAnim_ArmsSwingForwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-walkingAnim_ArmsSwingBackwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-breathingAnim_armGoUpStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-breathingAnim_armGoDownStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else{
+                g2.drawImage(arm_left.image,arm_left.getBounds().x,arm_left.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(torso);
+
+            if (inForwardLeanTorso){
+                drawRotatingLimb(g2,torso.pivotPoint.x,torso.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso.image,"torso");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,torso.pivotPoint.x,torso.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso.image,"torso");
+            }
+            else if (inBreatheIn && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
+
+                transform.translate(torso.getBounds().x, (breathingAnim_torsoY));
+
+                ((Graphics2D) g2).drawImage(torso.image, transform, null);
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y-breathingYChange),null);
+            }
+            else if (inBreatheOut && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
+
+                transform.translate(torso.getBounds().x, (breathingAnim_torsoY));
+
+                ((Graphics2D) g2).drawImage(torso.image, transform, null);
+
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y+breathingYChange),null);
+            }
+            else{
+                g2.drawImage(torso.image,torso.getBounds().x,torso.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,60,35));
+            //g2.fill(leg_right);
+
+            // right leg
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, leg_right.image, "leg_right");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,leg_right.image,"leg_right");
+            }
+            else if (inForwardLeanTorso){
+                // if 1 animation loop is done, reset to normal drawing of leg
+                if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+                    drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
+                }
+                else{
+                    drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_right.image,"leg_right");
+                }
+            }
+            else if (inBackwardLeanTorso){
+                // if 1 animation loop is done, reset to normal drawing of leg
+                if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+                    drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
+                }
+                else{
+                    drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_right.image,"leg_right");
+                }
+            }
+            else{
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
+            }
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(calf_right);
+
+            // right calf
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle, calf_right.image, "calf_right");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,calf_right.image,"calf_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_right.image,"calf_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_right.image,"calf_right");
+            }
+            else{
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,0,calf_right.image,"calf_right");
+            }
+
+            //g2.fill(torso_lower);
+            // torso lower
+            if (inForwardLeanTorso){
+                drawRotatingLimb(g2,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso_lower.image,"torso_lower");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso_lower.image,"torso_lower");
+            }
+            else if (inBreatheIn && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
+
+                transform.translate(torso_lower.getBounds().x, (breathingAnim_lowerTorsoY));
+
+                ((Graphics2D) g2).drawImage(torso_lower.image, transform, null);
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y-breathingYChange),null);
+            }
+            else if (inBreatheOut && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
+
+                transform.translate(torso_lower.getBounds().x, (breathingAnim_lowerTorsoY));
+
+                ((Graphics2D) g2).drawImage(torso_lower.image, transform, null);
+
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y+breathingYChange),null);
+            }
+            else{
+                g2.drawImage(torso_lower.image,torso_lower.getBounds().x,torso_lower.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,60,35));
+            //g2.fill(forearm_left);
+
+            // left forearm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-walkingAnim_ArmsSwingForwardStartingPosAngle, forearm_left.image, "forearm_left");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-walkingAnim_ArmsSwingBackwardStartingPosAngle, forearm_left.image,"forearm_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,breathingAnim_armGoUpStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,breathingAnim_armGoDownStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else{
+                g2.drawImage(forearm_left.image,forearm_left.getBounds().x,forearm_left.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,60,35));
+            //g2.fill(arm_right);
+
+            // right arm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,walkingAnim_ArmsSwingForwardStartingPosAngle, arm_right.image, "arm_right");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,walkingAnim_ArmsSwingBackwardStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inGoUpArmLightAttack){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,lightAttackAnim_ArmGoUpStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inGoDownArmLightAttack){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,lightAttackAnim_ArmGoDownStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,breathingAnim_armGoUpStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,breathingAnim_armGoDownStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inBackwardLeanTorso){
+                if (inArmLeapAttackDown){
+                    drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_ArmAttackDownStartingPosAngle,arm_right.image,"arm_right");
+                }
+                else if (inArmLeapAttackUp){
+                    drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_ArmAttackUpStartingPosAngle,arm_right.image,"arm_right");
+                }
+                else{
+                    drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_right.image,"arm_right");
+                }
+            }
+            else{
+                g2.drawImage(arm_right.image,arm_right.getBounds().x,arm_right.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(forearm_right);
+
+            // right forearm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,walkingAnim_ArmsSwingForwardStartingPosAngle, forearm_right.image, "forearm_right");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,walkingAnim_ArmsSwingBackwardStartingPosAngle, forearm_right.image,"forearm_right");
+            }
+            else if (inGoUpArmLightAttack){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,lightAttackAnim_ArmGoUpStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inGoDownArmLightAttack){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,lightAttackAnim_ArmGoDownStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-breathingAnim_armGoUpStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-breathingAnim_armGoDownStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inBackwardLeanTorso){
+                if (inArmLeapAttackDown){
+                    drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_ArmAttackDownStartingPosAngle,forearm_right.image,"forearm_right");
+                }
+                else if (inArmLeapAttackUp){
+                    drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_ArmAttackUpStartingPosAngle,forearm_right.image,"forearm_right");
+                }
+                else{
+                    drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_right.image,"forearm_right");
+                }
+            }
+            else{
+                g2.drawImage(forearm_right.image,forearm_right.getBounds().x,forearm_right.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,10,35));
+            //g2.fill(foot_right);
+
+            // right foot
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle, foot_right.image, "foot_right");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,foot_right.image,"foot_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_right.image,"foot_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_right.image,"foot_right");
+            }
+            else{
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,0,foot_right.image,"foot_right");
+            }
+
+            //g2.fill(foot_left);
+
+            //g2.setColor(new Color(0,35,0));
+            //g2.fill(head);
+
+            g2.drawImage(head.image,head.getBounds().x, head.getBounds().y,null);
         }
-        else if (inBackwardLeanTorso){
-            // if 1 animation loop is done, reset to normal drawing of leg
-            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+
+        else if(side.equals("right")){
+            // right leg
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, leg_right.image, "leg_right");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,leg_right.image,"leg_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_right.image,"leg_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_right.image,"leg_right");
+            }
+            else{
+                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
+            }
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(calf_right);
+
+            // right calf
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle, calf_right.image, "calf_right");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,calf_right.image,"calf_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_right.image,"calf_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_right.image,"calf_right");
+            }
+            else{
+                drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,0,calf_right.image,"calf_right");
+            }
+
+            // right foot
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle, foot_right.image, "foot_right");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,foot_right.image,"foot_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_right.image,"foot_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_right.image,"foot_right");
+            }
+            else{
+                drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,0,foot_right.image,"foot_right");
+            }
+
+            // right arm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,walkingAnim_ArmsSwingForwardStartingPosAngle, arm_right.image, "arm_right");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,walkingAnim_ArmsSwingBackwardStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,breathingAnim_armGoUpStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,breathingAnim_armGoDownStartingPosAngle,arm_right.image,"arm_right");
+            }
+            else{
+                g2.drawImage(arm_right.image,arm_right.getBounds().x,arm_right.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(forearm_right);
+
+            // right forearm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,walkingAnim_ArmsSwingForwardStartingPosAngle, forearm_right.image, "forearm_right");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,walkingAnim_ArmsSwingBackwardStartingPosAngle, forearm_right.image,"forearm_right");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-breathingAnim_armGoUpStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-breathingAnim_armGoDownStartingPosAngle,forearm_right.image,"forearm_right");
+            }
+            else{
+                g2.drawImage(forearm_right.image,forearm_right.getBounds().x,forearm_right.getBounds().y,null);
+            }
+
+            // left leg
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if(inLegLeftRotateForwardUpAttackLight){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight){
+                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,leg_left.image,"leg_left");
+            }
+            else{
                 drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-8,leg_left.image,"leg_left");
             }
-            else{
-                drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_left.image,"leg_left");
+
+            //g2.setColor(new Color(0,90,35));
+            //g2.fill(calf_left);
+
+            // left calf
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, calf_left.image, "calf_left");
             }
-        }
-        else if(inLegLeftRotateForwardUpAttackLight){
-            drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,leg_left.image,"leg_left");
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight){
-            drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,leg_left.image,"leg_left");
-        }
-        else{
-            drawRotatingLimb(g2,leg_left.pivotPoint.x,leg_left.pivotPoint.y,-8,leg_left.image,"leg_left");
-        }
-
-        //g2.setColor(new Color(0,90,35));
-        //g2.fill(calf_left);
-
-        // left calf
-        if (inForwardSwingLeg){
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, calf_left.image, "calf_left");
-        }
-        else if (inBackwardSwingLeg){
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,calf_left.image,"calf_left");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_left.image,"calf_left");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_left.image,"calf_left");
-        }
-        else if(inLegLeftRotateForwardUpAttackLight){
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,calf_left.image,"calf_left");
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight){
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,calf_left.image,"calf_left");
-        }
-        else{
-            drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,0,calf_left.image,"calf_left");
-        }
-
-        // left foot
-        if (inForwardSwingLeg){
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, foot_left.image, "foot_left");
-        }
-        else if (inBackwardSwingLeg){
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,foot_left.image,"foot_left");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_left.image,"foot_left");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_left.image,"foot_left");
-        }
-        else if(inLegLeftRotateForwardUpAttackLight){
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,foot_left.image,"foot_left");
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight){
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,foot_left.image,"foot_left");
-        }
-        else{
-            drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,0,foot_left.image,"foot_left");
-        }
-
-        //g2.setColor(new Color(0,60,35));
-        //g2.fill(arm_left);
-
-        // left arm
-        if (inForwardSwingArm){
-            drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-walkingAnim_ArmsSwingForwardStartingPosAngle,arm_left.image,"arm_left");
-        }
-        else if (inBackwardSwingArm){
-            drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-walkingAnim_ArmsSwingBackwardStartingPosAngle,arm_left.image,"arm_left");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_left.image,"arm_left");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_left.image,"arm_left");
-        }
-        else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-breathingAnim_armGoUpStartingPosAngle,arm_left.image,"arm_left");
-        }
-        else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-breathingAnim_armGoDownStartingPosAngle,arm_left.image,"arm_left");
-        }
-        else{
-            g2.drawImage(arm_left.image,arm_left.getBounds().x,arm_left.getBounds().y,null);
-        }
-
-        //g2.setColor(new Color(0,90,35));
-        //g2.fill(torso);
-
-        if (inForwardLeanTorso){
-            drawRotatingLimb(g2,torso.pivotPoint.x,torso.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso.image,"torso");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,torso.pivotPoint.x,torso.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso.image,"torso");
-        }
-        else if (inBreatheIn && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            AffineTransform transform = new AffineTransform();
-
-            transform.translate(torso.getBounds().x, (breathingAnim_torsoY));
-
-            ((Graphics2D) g2).drawImage(torso.image, transform, null);
-            //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y-breathingYChange),null);
-        }
-        else if (inBreatheOut && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            AffineTransform transform = new AffineTransform();
-
-            transform.translate(torso.getBounds().x, (breathingAnim_torsoY));
-
-            ((Graphics2D) g2).drawImage(torso.image, transform, null);
-
-            //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y+breathingYChange),null);
-        }
-        else{
-            g2.drawImage(torso.image,torso.getBounds().x,torso.getBounds().y,null);
-        }
-
-        //g2.setColor(new Color(0,60,35));
-        //g2.fill(leg_right);
-
-        // right leg
-        if (inForwardSwingLeg){
-            drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, leg_right.image, "leg_right");
-        }
-        else if (inBackwardSwingLeg){
-            drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,leg_right.image,"leg_right");
-        }
-        else if (inForwardLeanTorso){
-            // if 1 animation loop is done, reset to normal drawing of leg
-            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
-                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if(inLegLeftRotateForwardUpAttackLight){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,calf_left.image,"calf_left");
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight){
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,calf_left.image,"calf_left");
             }
             else{
-                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_right.image,"leg_right");
+                drawRotatingLimb(g2,calf_left.pivotPoint.x,calf_left.pivotPoint.y,0,calf_left.image,"calf_left");
             }
-        }
-        else if (inBackwardLeanTorso){
-            // if 1 animation loop is done, reset to normal drawing of leg
-            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
-                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
+
+            // left foot
+            if (inForwardSwingLeg){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,walkingAnim_LegsSwingForwardStartingPosAngle, foot_left.image, "foot_left");
             }
-            else{
-                drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_right.image,"leg_right");
+            else if (inBackwardSwingLeg){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,walkingAnim_LegsSwingBackwardStartingPosAngle,foot_left.image,"foot_left");
             }
-        }
-        else{
-            drawRotatingLimb(g2,leg_right.pivotPoint.x,leg_right.pivotPoint.y,8,leg_right.image,"leg_right");
-        }
-
-        //g2.setColor(new Color(0,90,35));
-        //g2.fill(calf_right);
-
-        // right calf
-        if (inForwardSwingLeg){
-            drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle, calf_right.image, "calf_right");
-        }
-        else if (inBackwardSwingLeg){
-            drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,calf_right.image,"calf_right");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_right.image,"calf_right");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_right.image,"calf_right");
-        }
-        else{
-            drawRotatingLimb(g2,calf_right.pivotPoint.x,calf_right.pivotPoint.y,0,calf_right.image,"calf_right");
-        }
-
-        //g2.fill(torso_lower);
-        // torso lower
-        if (inForwardLeanTorso){
-            drawRotatingLimb(g2,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso_lower.image,"torso_lower");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso_lower.image,"torso_lower");
-        }
-        else if (inBreatheIn && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            AffineTransform transform = new AffineTransform();
-
-            transform.translate(torso_lower.getBounds().x, (breathingAnim_lowerTorsoY));
-
-            ((Graphics2D) g2).drawImage(torso_lower.image, transform, null);
-            //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y-breathingYChange),null);
-        }
-        else if (inBreatheOut && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            AffineTransform transform = new AffineTransform();
-
-            transform.translate(torso_lower.getBounds().x, (breathingAnim_lowerTorsoY));
-
-            ((Graphics2D) g2).drawImage(torso_lower.image, transform, null);
-
-            //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y+breathingYChange),null);
-        }
-        else{
-            g2.drawImage(torso_lower.image,torso_lower.getBounds().x,torso_lower.getBounds().y,null);
-        }
-
-        //g2.setColor(new Color(0,60,35));
-        //g2.fill(forearm_left);
-
-        // left forearm
-        if (inForwardSwingArm){
-            drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-walkingAnim_ArmsSwingForwardStartingPosAngle, forearm_left.image, "forearm_left");
-        }
-        else if (inBackwardSwingArm){
-            drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-walkingAnim_ArmsSwingBackwardStartingPosAngle, forearm_left.image,"forearm_left");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_left.image,"forearm_left");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_left.image,"forearm_left");
-        }
-        else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,breathingAnim_armGoUpStartingPosAngle,forearm_left.image,"forearm_left");
-        }
-        else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,breathingAnim_armGoDownStartingPosAngle,forearm_left.image,"forearm_left");
-        }
-        else{
-            g2.drawImage(forearm_left.image,forearm_left.getBounds().x,forearm_left.getBounds().y,null);
-        }
-
-        //g2.setColor(new Color(0,60,35));
-        //g2.fill(arm_right);
-
-        // right arm
-        if (inForwardSwingArm){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,walkingAnim_ArmsSwingForwardStartingPosAngle, arm_right.image, "arm_right");
-        }
-        else if (inBackwardSwingArm){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,walkingAnim_ArmsSwingBackwardStartingPosAngle,arm_right.image,"arm_right");
-        }
-        else if (inGoUpArmLightAttack){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,lightAttackAnim_ArmGoUpStartingPosAngle,arm_right.image,"arm_right");
-        }
-        else if (inGoDownArmLightAttack){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,lightAttackAnim_ArmGoDownStartingPosAngle,arm_right.image,"arm_right");
-        }
-        else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,breathingAnim_armGoUpStartingPosAngle,arm_right.image,"arm_right");
-        }
-        else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,breathingAnim_armGoDownStartingPosAngle,arm_right.image,"arm_right");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_right.image,"arm_right");
-        }
-        else if (inBackwardLeanTorso){
-            if (inArmLeapAttackDown){
-                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_ArmAttackDownStartingPosAngle,arm_right.image,"arm_right");
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_left.image,"foot_left");
             }
-            else if (inArmLeapAttackUp){
-                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_ArmAttackUpStartingPosAngle,arm_right.image,"arm_right");
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else if(inLegLeftRotateForwardUpAttackLight){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle,foot_left.image,"foot_left");
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight){
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,-lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle,foot_left.image,"foot_left");
             }
             else{
-                drawRotatingLimb(g2,arm_right.pivotPoint.x,arm_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_right.image,"arm_right");
+                drawRotatingLimb(g2,foot_left.pivotPoint.x,foot_left.pivotPoint.y,0,foot_left.image,"foot_left");
             }
-        }
-        else{
-            g2.drawImage(arm_right.image,arm_right.getBounds().x,arm_right.getBounds().y,null);
-        }
 
-        //g2.setColor(new Color(0,90,35));
-        //g2.fill(forearm_right);
-
-        // right forearm
-        if (inForwardSwingArm){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,walkingAnim_ArmsSwingForwardStartingPosAngle, forearm_right.image, "forearm_right");
-        }
-        else if (inBackwardSwingArm){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,walkingAnim_ArmsSwingBackwardStartingPosAngle, forearm_right.image,"forearm_right");
-        }
-        else if (inGoUpArmLightAttack){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,lightAttackAnim_ArmGoUpStartingPosAngle,forearm_right.image,"forearm_right");
-        }
-        else if (inGoDownArmLightAttack){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,lightAttackAnim_ArmGoDownStartingPosAngle,forearm_right.image,"forearm_right");
-        }
-        else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-breathingAnim_armGoUpStartingPosAngle,forearm_right.image,"forearm_right");
-        }
-        else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,-breathingAnim_armGoDownStartingPosAngle,forearm_right.image,"forearm_right");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_right.image,"forearm_right");
-        }
-        else if (inBackwardLeanTorso){
-            if (inArmLeapAttackDown){
-                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_ArmAttackDownStartingPosAngle,forearm_right.image,"forearm_right");
+            //g2.fill(torso);
+            if (inForwardLeanTorso){
+                drawRotatingLimb(g2,torso.pivotPoint.x,torso.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso.image,"torso");
             }
-            else if (inArmLeapAttackUp){
-                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_ArmAttackUpStartingPosAngle,forearm_right.image,"forearm_right");
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,torso.pivotPoint.x,torso.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso.image,"torso");
+            }
+            else if (inBreatheIn && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
+
+                transform.translate(torso.getBounds().x, (breathingAnim_torsoY));
+
+                ((Graphics2D) g2).drawImage(torso.image, transform, null);
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y-breathingYChange),null);
+            }
+            else if (inBreatheOut && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
+
+                transform.translate(torso.getBounds().x, (breathingAnim_torsoY));
+
+                ((Graphics2D) g2).drawImage(torso.image, transform, null);
+
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y+breathingYChange),null);
             }
             else{
-                drawRotatingLimb(g2,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_right.image,"forearm_right");
+                g2.drawImage(torso.image,torso.getBounds().x,torso.getBounds().y,null);
             }
-        }
-        else{
-            g2.drawImage(forearm_right.image,forearm_right.getBounds().x,forearm_right.getBounds().y,null);
-        }
 
-        //g2.setColor(new Color(0,10,35));
-        //g2.fill(foot_right);
+            //g2.fill(torso_lower);
+            // torso lower
+            if (inForwardLeanTorso){
+                drawRotatingLimb(g2,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso_lower.image,"torso_lower");
+            }
+            else if (inBackwardLeanTorso){
+                drawRotatingLimb(g2,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso_lower.image,"torso_lower");
+            }
+            else if (inBreatheIn && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
 
-        // right foot
-        if (inForwardSwingLeg){
-            drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-walkingAnim_LegsSwingForwardStartingPosAngle, foot_right.image, "foot_right");
-        }
-        else if (inBackwardSwingLeg){
-            drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-walkingAnim_LegsSwingBackwardStartingPosAngle,foot_right.image,"foot_right");
-        }
-        else if (inForwardLeanTorso){
-            drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_right.image,"foot_right");
-        }
-        else if (inBackwardLeanTorso){
-            drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_right.image,"foot_right");
-        }
-        else{
-            drawRotatingLimb(g2,foot_right.pivotPoint.x,foot_right.pivotPoint.y,0,foot_right.image,"foot_right");
-        }
+                transform.translate(torso_lower.getBounds().x, (breathingAnim_lowerTorsoY));
 
-        //g2.fill(foot_left);
+                ((Graphics2D) g2).drawImage(torso_lower.image, transform, null);
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y-breathingYChange),null);
+            }
+            else if (inBreatheOut && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                AffineTransform transform = new AffineTransform();
 
-        //g2.setColor(new Color(0,35,0));
-        //g2.fill(head);
+                transform.translate(torso_lower.getBounds().x, (breathingAnim_lowerTorsoY));
 
-        g2.drawImage(head.image,head.getBounds().x, head.getBounds().y,null);
+                ((Graphics2D) g2).drawImage(torso_lower.image, transform, null);
+
+                //g2.drawImage(torso.image,torso.getBounds().x, (int) (torso.getBounds().y+breathingYChange),null);
+            }
+            else{
+                g2.drawImage(torso_lower.image,torso_lower.getBounds().x,torso_lower.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,60,35));
+            //g2.fill(arm_left);
+
+            // left arm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-walkingAnim_ArmsSwingForwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-walkingAnim_ArmsSwingBackwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inGoUpArmLightAttack){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,lightAttackAnim_ArmGoUpStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inGoDownArmLightAttack){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,lightAttackAnim_ArmGoDownStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBackwardLeanTorso){
+                if (inArmLeapAttackDown){
+                    drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,leapAttackAnim_ArmAttackDownStartingPosAngle,arm_left.image,"arm_left");
+                }
+                else if (inArmLeapAttackUp){
+                    drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,leapAttackAnim_ArmAttackUpStartingPosAngle,arm_left.image,"arm_left");
+                }
+                else{
+                    drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_left.image,"arm_left");
+                }
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-breathingAnim_armGoUpStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,arm_left.pivotPoint.x,arm_left.pivotPoint.y,-breathingAnim_armGoDownStartingPosAngle,arm_left.image,"arm_left");
+            }
+            else{
+                g2.drawImage(arm_left.image,arm_left.getBounds().x,arm_left.getBounds().y,null);
+            }
+
+            //g2.setColor(new Color(0,60,35));
+            //g2.fill(forearm_left);
+
+            // left forearm
+            if (inForwardSwingArm){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-walkingAnim_ArmsSwingForwardStartingPosAngle, forearm_left.image, "forearm_left");
+            }
+            else if (inBackwardSwingArm){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,-walkingAnim_ArmsSwingBackwardStartingPosAngle, forearm_left.image,"forearm_left");
+            }
+            else if (inGoUpArmLightAttack){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,lightAttackAnim_ArmGoUpStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inGoDownArmLightAttack){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,lightAttackAnim_ArmGoDownStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inForwardLeanTorso){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inBackwardLeanTorso){
+                if (inArmLeapAttackDown){
+                    drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,leapAttackAnim_ArmAttackDownStartingPosAngle,forearm_left.image,"forearm_left");
+                }
+                else if (inArmLeapAttackUp){
+                    drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,leapAttackAnim_ArmAttackUpStartingPosAngle,forearm_left.image,"forearm_left");
+                }
+                else{
+                    drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_left.image,"forearm_left");
+                }
+            }
+            else if (inBreatheInArmGoUp && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,breathingAnim_armGoUpStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else if (inBreatheOutArmGoDown && !inLeapAttackProcess && !inLightAttackProcess && !inForwardWalkingProcess && !inBackwardWalkingProcess){
+                drawRotatingLimb(g2,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y,breathingAnim_armGoDownStartingPosAngle,forearm_left.image,"forearm_left");
+            }
+            else{
+                g2.drawImage(forearm_left.image,forearm_left.getBounds().x,forearm_left.getBounds().y,null);
+            }
+
+            //g2.fill(foot_left);
+
+            //g2.setColor(new Color(0,35,0));
+            //g2.fill(head);
+
+            g2.drawImage(head.image,head.getBounds().x, head.getBounds().y,null);
+        }
 
         // draw pivot points of EntityParts
-
-        //torso.drawPivotPoint(g2);
 
         torso_lower.drawPivotPoint(g2);
 
@@ -785,183 +1204,353 @@ public class Player extends Entity{
         g2.setColor(Color.red);
         g2.drawLine((int)torso.x + (int)torso.width/2,(int)torso.y,(int)torso.x + (int)torso.width/2,(int)torso.y);
 
-        g2.setColor(new Color(255,0,0));
+        g2.setColor(Color.orange);
         g2.fill(hitbox);
     }
 
     @Override
     public void update_entityPart_positions() {
 
-        head.x = head.pivotPoint.x - head.width/2;
-        head.y = head.pivotPoint.y - head.height;
+        if (side.equals("left")){
+            head.x = head.pivotPoint.x - head.width/2;
+            head.y = head.pivotPoint.y - head.height;
 
-        // arm right
-        arm_right.x = arm_right.pivotPoint.x - arm_right.width*17/20;
-        arm_right.y = arm_right.pivotPoint.y;
+            // arm right
+            arm_right.x = arm_right.pivotPoint.x - arm_right.width*17/20;
+            arm_right.y = arm_right.pivotPoint.y;
 
-        arm_right = rotate_limb(arm_right,1,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+            arm_right = rotate_limb(arm_right,1,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
 
-        // forearm right
-        forearm_right.x = forearm_right.pivotPoint.x - forearm_right.width*8/20;
-        forearm_right.y = forearm_right.pivotPoint.y;
+            // forearm right
+            forearm_right.x = forearm_right.pivotPoint.x - forearm_right.width*8/20;
+            forearm_right.y = forearm_right.pivotPoint.y;
 
-        forearm_right = rotate_limb(forearm_right,0,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+            forearm_right = rotate_limb(forearm_right,0,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
 
-        // arm left
-        arm_left.x = arm_left.pivotPoint.x - arm_left.width*3/20;
-        arm_left.y = arm_left.pivotPoint.y;
+            // arm left
+            arm_left.x = arm_left.pivotPoint.x - arm_left.width*3/20;
+            arm_left.y = arm_left.pivotPoint.y;
 
-        arm_left = rotate_limb(arm_left,0,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+            arm_left = rotate_limb(arm_left,0,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
 
-        // forearm left
-        forearm_left.x = forearm_left.pivotPoint.x - forearm_left.width*12/20;
-        forearm_left.y = forearm_left.pivotPoint.y;
+            // forearm left
+            forearm_left.x = forearm_left.pivotPoint.x - forearm_left.width*12/20;
+            forearm_left.y = forearm_left.pivotPoint.y;
 
-        forearm_left = rotate_limb(forearm_left,0,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+            forearm_left = rotate_limb(forearm_left,0,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
 
-        // torso lower
-        torso_lower.x = torso_lower.pivotPoint.x - torso_lower.width/2;
-        torso_lower.y = torso_lower.pivotPoint.y - 1;
+            // torso lower
+            torso_lower.x = torso_lower.pivotPoint.x - torso_lower.width/2;
+            torso_lower.y = torso_lower.pivotPoint.y - 1;
 
-        // leg right
-        leg_right.x = leg_right.pivotPoint.x - leg_right.width/2;
-        leg_right.y = leg_right.pivotPoint.y;
+            // leg right
+            leg_right.x = leg_right.pivotPoint.x - leg_right.width/2;
+            leg_right.y = leg_right.pivotPoint.y;
 
-        leg_right = rotate_limb(leg_right,8,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+            leg_right = rotate_limb(leg_right,8,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
 
-        // calf right
-        calf_right.x = calf_right.pivotPoint.x - calf_right.width/2;
-        calf_right.y = calf_right.pivotPoint.y;
+            // calf right
+            calf_right.x = calf_right.pivotPoint.x - calf_right.width/2;
+            calf_right.y = calf_right.pivotPoint.y;
 
-        calf_right = rotate_limb(calf_right,0,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+            calf_right = rotate_limb(calf_right,0,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
 
-        // foot right
-        foot_right.x = foot_right.pivotPoint.x - foot_right.width/2 - foot_right.width/2;
-        foot_right.y = foot_right.pivotPoint.y;
+            // foot right
+            foot_right.x = foot_right.pivotPoint.x - foot_right.width/2 - foot_right.width/2;
+            foot_right.y = foot_right.pivotPoint.y;
 
-        foot_right = rotate_limb(foot_right,0,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+            foot_right = rotate_limb(foot_right,0,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
 
-        // leg left
-        leg_left.x = leg_left.pivotPoint.x - leg_left.width/2;
-        leg_left.y = leg_left.pivotPoint.y;
+            // leg left
+            leg_left.x = leg_left.pivotPoint.x - leg_left.width/2;
+            leg_left.y = leg_left.pivotPoint.y;
 
-        leg_left = rotate_limb(leg_left,-8,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+            leg_left = rotate_limb(leg_left,-8,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
 
-        // calf left
-        calf_left.x = calf_left.pivotPoint.x - calf_left.width/2;
-        calf_left.y = calf_left.pivotPoint.y;
+            // calf left
+            calf_left.x = calf_left.pivotPoint.x - calf_left.width/2;
+            calf_left.y = calf_left.pivotPoint.y;
 
-        calf_left = rotate_limb(calf_left,0,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+            calf_left = rotate_limb(calf_left,0,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
 
-        // foot left
-        foot_left.x = foot_left.pivotPoint.x;
-        foot_left.y = foot_left.pivotPoint.y;
+            // foot left
+            foot_left.x = foot_left.pivotPoint.x;
+            foot_left.y = foot_left.pivotPoint.y;
 
-        foot_left = rotate_limb(foot_left,0,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+            foot_left = rotate_limb(foot_left,0,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+        }
+        else if(side.equals("right")){
+            head.x = head.pivotPoint.x - head.width/2;
+            head.y = head.pivotPoint.y - head.height;
+
+            // arm right
+            arm_right.x = arm_right.pivotPoint.x - arm_right.width*17/20;
+            arm_right.y = arm_right.pivotPoint.y;
+
+            arm_right = rotate_limb(arm_right,0,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+
+            // forearm right
+            forearm_right.x = forearm_right.pivotPoint.x - forearm_right.width*8/20;
+            forearm_right.y = forearm_right.pivotPoint.y;
+
+            forearm_right = rotate_limb(forearm_right,0,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+
+            // arm left
+            arm_left.x = arm_left.pivotPoint.x - arm_left.width*3/20;
+            arm_left.y = arm_left.pivotPoint.y;
+
+            arm_left = rotate_limb(arm_left,0,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+
+            // forearm left
+            forearm_left.x = forearm_left.pivotPoint.x - forearm_left.width*12/20;
+            forearm_left.y = forearm_left.pivotPoint.y;
+
+            forearm_left = rotate_limb(forearm_left,0,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+
+            // torso lower
+            torso_lower.x = torso_lower.pivotPoint.x - torso_lower.width/2;
+            torso_lower.y = torso_lower.pivotPoint.y - 1;
+
+            // leg right
+            leg_right.x = leg_right.pivotPoint.x - leg_right.width/2;
+            leg_right.y = leg_right.pivotPoint.y;
+
+            leg_right = rotate_limb(leg_right,8,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+
+            // calf right
+            calf_right.x = calf_right.pivotPoint.x - calf_right.width/2;
+            calf_right.y = calf_right.pivotPoint.y;
+
+            calf_right = rotate_limb(calf_right,0,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+
+            // foot right
+            foot_right.x = foot_right.pivotPoint.x - foot_right.width/2 - foot_right.width/2;
+            foot_right.y = foot_right.pivotPoint.y;
+
+            foot_right = rotate_limb(foot_right,0,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+
+            // leg left
+            leg_left.x = leg_left.pivotPoint.x - leg_left.width/2;
+            leg_left.y = leg_left.pivotPoint.y;
+
+            leg_left = rotate_limb(leg_left,-8,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+
+            // calf left
+            calf_left.x = calf_left.pivotPoint.x - calf_left.width/2;
+            calf_left.y = calf_left.pivotPoint.y;
+
+            calf_left = rotate_limb(calf_left,0,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+
+            // foot left
+            foot_left.x = foot_left.pivotPoint.x;
+            foot_left.y = foot_left.pivotPoint.y;
+
+            foot_left = rotate_limb(foot_left,0,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+        }
     }
 
     @Override
     public void update_pivotPoints() {
 
-        torso.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + torso.height/2);
+        if (side.equals("left")){
+            torso.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + torso.height/2);
 
-        head.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + head.height*4/17);
+            head.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + head.height*4/17);
 
-        // right arm
-        arm_right.pivotPoint.setLocation(torso.x + arm_right.width/5,torso.y + arm_right.height/6);
+            // right arm
+            arm_right.pivotPoint.setLocation(torso.x + arm_right.width/5,torso.y + arm_right.height/6);
 
-        // right forearm
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
-            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
-        }
-        else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
-            forearm_right.pivotPoint.setLocation(torso.x + forearm_right.width*7/30,torso.y + forearm_right.height);
-        }
-        else {
-            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
-        }
+            // right forearm
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
+                forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+            }
+            else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
+                forearm_right.pivotPoint.setLocation(torso.x + forearm_right.width*7/30,torso.y + forearm_right.height);
+            }
+            else {
+                forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+            }
 
-        // left arm
-        arm_left.pivotPoint.setLocation(torso.x + torso.width - arm_left.width/5,torso.y + arm_left.height/6);
+            // left arm
+            arm_left.pivotPoint.setLocation(torso.x + torso.width - arm_left.width/5,torso.y + arm_left.height/6);
 
-        // left forearm
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
-            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
-        }
+            // left forearm
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
+                forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+            }
         /*else if (inLeapAttackProcess){
             forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width*28/60,torso.y + forearm_left.height*22/20);
         }*/
-        else {
-            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
-        }
+            else {
+                forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+            }
 
-        // torso lower
-        if (inForwardWalkingProcess){
-            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2+2,torso.y + torso.height);
-        }
-        else if (inBackwardWalkingProcess) {
-            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2-2,torso.y + torso.height);
-        }
+            // torso lower
+            if (inForwardWalkingProcess){
+                torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2+2,torso.y + torso.height);
+            }
+            else if (inBackwardWalkingProcess) {
+                torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2-2,torso.y + torso.height);
+            }
+            else {
+                torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2,torso.y + torso.height);
+            }
 
-        else {
-            torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2,torso.y + torso.height);
-        }
+            // right leg
+            leg_right.pivotPoint.setLocation(torso.x + leg_right.width,torso.y + torso.height);
 
-        // right leg
-        leg_right.pivotPoint.setLocation(torso.x + leg_right.width,torso.y + torso.height);
+            // right calf
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width + calf_right.width/5,leg_right.y + leg_right.height - leg_right.height/8);
+            }
+            else {
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
+            }
 
-        // right calf
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width + calf_right.width/5,leg_right.y + leg_right.height - leg_right.height/8);
-        }
-        else {
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
-        }
+            // right foot
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*9/10 + foot_right.width*3/10,calf_right.y + calf_right.height - calf_right.height/8);
+            }
+            else {
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
+            }
 
-        // right foot
-        if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*9/10 + foot_right.width*3/10,calf_right.y + calf_right.height - calf_right.height/8);
-        }
-        else {
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
-        }
+            // left leg
+            if (inLeapAttackProcess){
+                leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width*25/20,torso.y + torso.height*9/10);
+            }
+            else{
+                leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width,torso.y + torso.height);
+            }
 
-        // left leg
-        if (inLeapAttackProcess){
-            leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width*25/20,torso.y + torso.height*9/10);
+            // left calf
+            if (inForwardWalkingProcess || inBackwardWalkingProcess){
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*6/5,leg_left.y + leg_left.height - leg_left.height/8);
+            }
+            else if (inLeapAttackProcess){
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*30/20,leg_left.y + leg_left.height - leg_left.height/8);
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*23/20,leg_left.y + leg_left.height - leg_left.height/8);
+            }
+            else {
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
+            }
+
+            // left foot
+            if (inForwardWalkingProcess || inBackwardWalkingProcess){
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*12/10,calf_left.y + calf_left.height - calf_left.height/8);
+            }
+            else if (inLeapAttackProcess){
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*30/20,calf_left.y + calf_left.height - calf_left.height/14);
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*25/20,calf_left.y + calf_left.height - calf_left.height*8/30);
+            }
+            else {
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
+            }
         }
-        else{
+        else if (side.equals("right")){
+            torso.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + torso.height/2);
+
+            head.pivotPoint.setLocation(torso.x + torso.width/2,torso.y + head.height*4/17);
+
+            // right arm
+            arm_right.pivotPoint.setLocation(torso.x + arm_right.width/5,torso.y + arm_right.height/6);
+
+            // right forearm
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess || inLeapAttackProcess){
+                forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+            }
+        /*else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
+            forearm_right.pivotPoint.setLocation(torso.x + forearm_right.width*7/30,torso.y + forearm_right.height);
+        }*/
+            else {
+                forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+            }
+
+            // left arm
+            arm_left.pivotPoint.setLocation(torso.x + torso.width - arm_left.width/5,torso.y + arm_left.height/6);
+
+            // left forearm
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLightAttackProcess){
+                forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+            }
+            else if (inLeapAttackProcess && inArmLeapAttackDown || inArmLeapAttackUp){
+                forearm_left.pivotPoint.setLocation(torso.x + torso.width - forearm_left.width*7/30,torso.y + forearm_left.height);
+            }
+            else {
+                forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+            }
+
+            // torso lower
+            if (inForwardWalkingProcess){
+                torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2-2,torso.y + torso.height);
+            }
+            else if (inBackwardWalkingProcess) {
+                torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2+2,torso.y + torso.height);
+            }
+
+            else {
+                torso_lower.pivotPoint.setLocation(torso.x + torso_lower.width/2,torso.y + torso.height);
+            }
+
+            // right leg
+            if (inLeapAttackProcess){
+                leg_right.pivotPoint.setLocation(torso.x + leg_right.width*25/20,torso.y + torso.height*9/10);
+            }
+            else{
+                leg_right.pivotPoint.setLocation(torso.x + leg_right.width,torso.y + torso.height);
+            }
+
+            // right calf
+            if (inForwardWalkingProcess || inBackwardWalkingProcess){
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width + calf_right.width/5,leg_right.y + leg_right.height - leg_right.height/8);
+            }
+            else if (inLeapAttackProcess){
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width*30/20,leg_right.y + leg_right.height - leg_right.height/8);
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width*23/20,leg_right.y + leg_right.height - leg_right.height/8);
+            }
+            else {
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
+            }
+
+            // right foot
+            if (inForwardWalkingProcess || inBackwardWalkingProcess){
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*9/10 + foot_right.width*3/10,calf_right.y + calf_right.height - calf_right.height/8);
+            }
+            else if (inLeapAttackProcess){
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*30/20,calf_right.y + calf_right.height - calf_right.height/14);
+            }
+            else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*25/20,calf_right.y + calf_right.height - calf_right.height*8/30);
+            }
+            else {
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
+            }
+
+            // left leg
             leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width,torso.y + torso.height);
-        }
 
-        // left calf
-        if (inForwardWalkingProcess || inBackwardWalkingProcess){
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*6/5,leg_left.y + leg_left.height - leg_left.height/8);
-        }
-        else if (inLeapAttackProcess){
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*30/20,leg_left.y + leg_left.height - leg_left.height/8);
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*23/20,leg_left.y + leg_left.height - leg_left.height/8);
-        }
-        else {
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
-        }
+            // left calf
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*6/5,leg_left.y + leg_left.height - leg_left.height/8);
+            }
+            else {
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
+            }
 
-        // left foot
-        if (inForwardWalkingProcess || inBackwardWalkingProcess){
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*12/10,calf_left.y + calf_left.height - calf_left.height/8);
+            // left foot
+            if (inForwardWalkingProcess || inBackwardWalkingProcess || inLeapAttackProcess){
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*12/10,calf_left.y + calf_left.height - calf_left.height/8);
+            }
+            else {
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
+            }
         }
-        else if (inLeapAttackProcess){
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*30/20,calf_left.y + calf_left.height - calf_left.height/14);
-        }
-        else if (inLegLeftRotateBackwardDownAttackLight || inLegLeftRotateForwardUpAttackLight){
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*25/20,calf_left.y + calf_left.height - calf_left.height*8/30);
-        }
-        else {
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
-        }
-
     }
 
     public Point2D.Double rotatePoint(Point2D.Double point, Point2D.Double pivot, double angle) {
@@ -992,64 +1581,127 @@ public class Player extends Entity{
         // Rotate around the pivot point
         g2d.rotate(Math.toRadians(rotationAngle));
 
-        if (limbType.equals("arm_right")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()*8/10, -image.getHeight() / 100);
-        }
+        if (side.equals("left")){
+            if (limbType.equals("arm_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*8/10, -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("arm_left")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()*10/50 , -image.getHeight() / 100);
-        }
+            else if (limbType.equals("arm_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*10/50 , -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("forearm_right")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()*8/20, -image.getHeight() / 100);
-        }
+            else if (limbType.equals("forearm_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*8/20, -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("forearm_left")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()*12/20, -image.getHeight() / 100);
-        }
+            else if (limbType.equals("forearm_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*12/20, -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("leg_right")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth() / 2, -image.getHeight() / 100);
-        }
+            else if (limbType.equals("leg_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2, -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("leg_left")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth() / 2, -image.getHeight() / 100);
-        }
+            else if (limbType.equals("leg_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2, -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("calf_right")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth() / 2 , -image.getHeight() / 100);
-        }
+            else if (limbType.equals("calf_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2 , -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("calf_left")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth() / 2 , -image.getHeight() / 100);
-        }
+            else if (limbType.equals("calf_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2 , -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("foot_right")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth(), -image.getHeight() / 100);
-        }
+            else if (limbType.equals("foot_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth(), -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("foot_left")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()/38, -image.getHeight() / 100);
-        }
+            else if (limbType.equals("foot_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()/38, -image.getHeight() / 100);
+            }
 
-        else if (limbType.equals("torso")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()/2, -image.getHeight()/2);
-        }
+            else if (limbType.equals("torso")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()/2, -image.getHeight()/2);
+            }
 
-        else if (limbType.equals("torso_lower")){
-            // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
-            g2d.translate(-image.getWidth()/2, -image.getHeight()/16);
+            else if (limbType.equals("torso_lower")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()/2, -image.getHeight()/16);
+            }
+        }
+        else if (side.equals("right")){
+            if (limbType.equals("arm_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*8/10, -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("arm_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*10/50 , -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("forearm_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*8/20, -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("forearm_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()*12/20, -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("leg_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2, -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("leg_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2, -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("calf_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2 , -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("calf_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth() / 2 , -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("foot_right")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth(), -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("foot_left")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()/38, -image.getHeight() / 100);
+            }
+
+            else if (limbType.equals("torso")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()/2, -image.getHeight()/2);
+            }
+
+            else if (limbType.equals("torso_lower")){
+                // Translate back by (-image.getWidth() / 2, -image.getHeight() / 2) to keep the image in place
+                g2d.translate(-image.getWidth()/2, -image.getHeight()/16);
+            }
         }
 
         // Draw the image at the rotated position
@@ -1280,39 +1932,78 @@ public class Player extends Entity{
 
     public void animateArmAttackLight(){
 
-        if (lightAttackAnim_ArmGoDownStartingPosAngle > -20 && lightAttackAnim_ArmGoUpStartingPosAngle < -80){
-            lightAttackAnim_ArmGoDownStartingPosAngle = -80;
-            lightAttackAnim_ArmGoUpStartingPosAngle = -20;
+        if (side.equals("left")){
+            if (lightAttackAnim_ArmGoDownStartingPosAngle > -20 && lightAttackAnim_ArmGoUpStartingPosAngle < -80){
+                lightAttackAnim_ArmGoDownStartingPosAngle = -80;
+                lightAttackAnim_ArmGoUpStartingPosAngle = -20;
 
-            inGoUpArmLightAttack = false;
-            inGoDownArmLightAttack = false;
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = false;
+            }
+
+            if (lightAttackAnim_ArmGoUpStartingPosAngle >= -80){
+                inGoUpArmLightAttack = true;
+                lightAttackAnim_ArmGoUpStartingPosAngle -= 1.7;
+
+                // update pivot points
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, lightAttackAnim_ArmGoUpStartingPosAngle);
+
+                // rotate limbs
+                arm_right = rotate_limb(arm_right, lightAttackAnim_ArmGoUpStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right, lightAttackAnim_ArmGoUpStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+
+            }
+
+            else if (lightAttackAnim_ArmGoDownStartingPosAngle <= -20){
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = true;
+                lightAttackAnim_ArmGoDownStartingPosAngle += 2.5;
+
+                // update pivot points
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, lightAttackAnim_ArmGoDownStartingPosAngle);
+
+                // rotate limbs
+                arm_right = rotate_limb(arm_right, lightAttackAnim_ArmGoDownStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right, lightAttackAnim_ArmGoDownStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+
+            }
         }
 
-        if (lightAttackAnim_ArmGoUpStartingPosAngle >= -80){
-            inGoUpArmLightAttack = true;
-            lightAttackAnim_ArmGoUpStartingPosAngle -= 1.7;
+        else if(side.equals("right")){
+            if (lightAttackAnim_ArmGoDownStartingPosAngle < 20 && lightAttackAnim_ArmGoUpStartingPosAngle > 80){
+                lightAttackAnim_ArmGoDownStartingPosAngle = 80;
+                lightAttackAnim_ArmGoUpStartingPosAngle = 20;
 
-            // update pivot points
-            forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, lightAttackAnim_ArmGoUpStartingPosAngle);
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = false;
+            }
 
-            // rotate limbs
-            arm_right = rotate_limb(arm_right, lightAttackAnim_ArmGoUpStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
-            forearm_right = rotate_limb(forearm_right, lightAttackAnim_ArmGoUpStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+            if (lightAttackAnim_ArmGoUpStartingPosAngle <= 80){
+                inGoUpArmLightAttack = true;
+                lightAttackAnim_ArmGoUpStartingPosAngle += 2.5;
 
-        }
+                // update pivot points
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, lightAttackAnim_ArmGoUpStartingPosAngle);
 
-        else if (lightAttackAnim_ArmGoDownStartingPosAngle <= -20){
-            inGoUpArmLightAttack = false;
-            inGoDownArmLightAttack = true;
-            lightAttackAnim_ArmGoDownStartingPosAngle += 2.5;
+                // rotate limbs
+                arm_left = rotate_limb(arm_left, lightAttackAnim_ArmGoUpStartingPosAngle, arm_left.pivotPoint.x, arm_left.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left, lightAttackAnim_ArmGoUpStartingPosAngle, forearm_left.pivotPoint.x, forearm_left.pivotPoint.y);
 
-            // update pivot points
-            forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, lightAttackAnim_ArmGoDownStartingPosAngle);
+            }
 
-            // rotate limbs
-            arm_right = rotate_limb(arm_right, lightAttackAnim_ArmGoDownStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
-            forearm_right = rotate_limb(forearm_right, lightAttackAnim_ArmGoDownStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+            else if (lightAttackAnim_ArmGoDownStartingPosAngle >= 20){
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = true;
+                lightAttackAnim_ArmGoDownStartingPosAngle -= 2.5;
 
+                // update pivot points
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, lightAttackAnim_ArmGoDownStartingPosAngle);
+
+                // rotate limbs
+                arm_left = rotate_limb(arm_left, lightAttackAnim_ArmGoDownStartingPosAngle, arm_left.pivotPoint.x, arm_left.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left, lightAttackAnim_ArmGoDownStartingPosAngle, forearm_left.pivotPoint.x, forearm_left.pivotPoint.y);
+
+            }
         }
     }
 
@@ -1325,123 +2016,229 @@ public class Player extends Entity{
             calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
         }*/
 
-        if (leapAttackAnim_ArmAttackDownStartingPosAngle >= -70){
-            inArmLeapAttackDown = true;
-            leapAttackAnim_ArmAttackDownStartingPosAngle -= 2.5*animationSpeed;
+        if (side.equals("left")){
+            if (leapAttackAnim_ArmAttackDownStartingPosAngle >= -70){
+                inArmLeapAttackDown = true;
+                leapAttackAnim_ArmAttackDownStartingPosAngle -= 2.5*animationSpeed;
 
-            // update pivot points
-            forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, leapAttackAnim_ArmAttackDownStartingPosAngle);
+                // update pivot points
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, leapAttackAnim_ArmAttackDownStartingPosAngle);
 
-            // rotate limbs
-            arm_right = rotate_limb(arm_right, leapAttackAnim_ArmAttackDownStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
-            forearm_right = rotate_limb(forearm_right, leapAttackAnim_ArmAttackDownStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+                // rotate limbs
+                arm_right = rotate_limb(arm_right, leapAttackAnim_ArmAttackDownStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right, leapAttackAnim_ArmAttackDownStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+            }
+
+            else if (leapAttackAnim_ArmAttackUpStartingPosAngle <= 0){
+                inArmLeapAttackDown = false;
+                inArmLeapAttackUp = true;
+                leapAttackAnim_ArmAttackUpStartingPosAngle += 1*animationSpeed;
+
+                // update pivot points
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, leapAttackAnim_ArmAttackUpStartingPosAngle);
+
+                // rotate limbs
+                arm_right = rotate_limb(arm_right, leapAttackAnim_ArmAttackUpStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right, leapAttackAnim_ArmAttackUpStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+            }
         }
+        else if(side.equals("right")){
+            if (leapAttackAnim_ArmAttackDownStartingPosAngle <= 70){
+                inArmLeapAttackDown = true;
+                leapAttackAnim_ArmAttackDownStartingPosAngle += 2.5*animationSpeed;
 
-        else if (leapAttackAnim_ArmAttackUpStartingPosAngle <= 0){
-            inArmLeapAttackDown = false;
-            inArmLeapAttackUp = true;
-            leapAttackAnim_ArmAttackUpStartingPosAngle += 1*animationSpeed;
+                // update pivot points
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, leapAttackAnim_ArmAttackDownStartingPosAngle);
 
-            // update pivot points
-            forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, leapAttackAnim_ArmAttackUpStartingPosAngle);
+                // rotate limbs
+                arm_left = rotate_limb(arm_left, leapAttackAnim_ArmAttackDownStartingPosAngle, arm_left.pivotPoint.x, arm_left.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left, leapAttackAnim_ArmAttackDownStartingPosAngle, forearm_left.pivotPoint.x, forearm_left.pivotPoint.y);
+            }
 
-            // rotate limbs
-            arm_right = rotate_limb(arm_right, leapAttackAnim_ArmAttackUpStartingPosAngle, arm_right.pivotPoint.x, arm_right.pivotPoint.y);
-            forearm_right = rotate_limb(forearm_right, leapAttackAnim_ArmAttackUpStartingPosAngle, forearm_right.pivotPoint.x, forearm_right.pivotPoint.y);
+            else if (leapAttackAnim_ArmAttackUpStartingPosAngle >= 0){
+                inArmLeapAttackDown = false;
+                inArmLeapAttackUp = true;
+                leapAttackAnim_ArmAttackUpStartingPosAngle -= 1*animationSpeed;
+
+                // update pivot points
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, leapAttackAnim_ArmAttackUpStartingPosAngle);
+
+                // rotate limbs
+                arm_left = rotate_limb(arm_left, leapAttackAnim_ArmAttackUpStartingPosAngle, arm_left.pivotPoint.x, arm_left.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left, leapAttackAnim_ArmAttackUpStartingPosAngle, forearm_left.pivotPoint.x, forearm_left.pivotPoint.y);
+            }
         }
     }
 
     public void animateAttackLeap(){
-
-        // reset when 1st loop animation is over
-        if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
-            forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
-            forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
-            leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width,torso.y + torso.height);
-            calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
-            calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
-            foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
-            foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
-        }
-
-        if (leapAttackAnim_TorsoLeanForwardStartingPosAngle <= 20){
-            inForwardLeanTorso = true;
-            leapAttackAnim_TorsoLeanForwardStartingPosAngle += 0.2*animationSpeed;
-            leg_right.rotationAngle = leapAttackAnim_TorsoLeanForwardStartingPosAngle;
-            leg_left.rotationAngle = leapAttackAnim_TorsoLeanForwardStartingPosAngle;
-
-            // update pivot points
-            torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            head.pivotPoint = rotatePoint(head.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            arm_right.pivotPoint = rotatePoint(arm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            arm_left.pivotPoint = rotatePoint(arm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            torso_lower.pivotPoint = rotatePoint(torso_lower.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            leg_right.pivotPoint = rotatePoint(leg_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            leg_left.pivotPoint = rotatePoint(leg_left.pivotPoint, leg_left.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            calf_right.pivotPoint = rotatePoint(calf_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            calf_left.pivotPoint = rotatePoint(calf_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            foot_right.pivotPoint = rotatePoint(foot_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-            foot_left.pivotPoint = rotatePoint(foot_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
-
-            // rotate limbs
-            torso = rotate_limb(torso,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso.pivotPoint.x,torso.pivotPoint.y);
-            torso_lower = rotate_limb(torso_lower,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y);
-            head = rotate_limb(head,leapAttackAnim_TorsoLeanForwardStartingPosAngle,head.pivotPoint.x,head.pivotPoint.y);
-            arm_right = rotate_limb(arm_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
-            arm_left = rotate_limb(arm_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
-            forearm_right = rotate_limb(forearm_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
-            forearm_left = rotate_limb(forearm_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
-            leg_right = rotate_limb(leg_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
-            leg_left = rotate_limb(leg_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
-            calf_right = rotate_limb(calf_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
-            calf_left = rotate_limb(calf_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
-            foot_right = rotate_limb(foot_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
-            foot_left = rotate_limb(foot_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
-        }
-
-        else if (leapAttackAnim_TorsoLeanBackwardStartingPosAngle >= 0){
-            inForwardLeanTorso = false;
-            inBackwardLeanTorso = true;
-            leapAttackAnim_TorsoLeanBackwardStartingPosAngle -= 0.2*animationSpeed;
-            leg_right.rotationAngle = leapAttackAnim_TorsoLeanBackwardStartingPosAngle;
-            leg_left.rotationAngle = leapAttackAnim_TorsoLeanBackwardStartingPosAngle;
-
-            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle >= 20){
-                animateArmAttackLeap();
+        if(side.equals("left")){
+            // reset when 1st loop animation is over
+            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle > 20 && leapAttackAnim_TorsoLeanBackwardStartingPosAngle < 0){
+                forearm_right.pivotPoint.setLocation(torso.x - forearm_right.width/4,torso.y + forearm_right.height);
+                forearm_left.pivotPoint.setLocation(torso.x + torso.width + forearm_left.width/4,torso.y + forearm_left.height);
+                leg_left.pivotPoint.setLocation(torso.x + torso.width - leg_left.width,torso.y + torso.height);
+                calf_right.pivotPoint.setLocation(torso.x + calf_right.width - calf_right.width/3,leg_right.y + leg_right.height - leg_right.height/8);
+                calf_left.pivotPoint.setLocation(torso.x + torso.width - calf_left.width*2/3,leg_left.y + leg_left.height - leg_left.height/8);
+                foot_right.pivotPoint.setLocation(torso.x + foot_right.width*6/7,calf_right.y + calf_right.height - calf_right.height/8);
+                foot_left.pivotPoint.setLocation(torso.x + torso.width - foot_left.width*6/7,calf_left.y + calf_left.height - calf_left.height/8);
             }
 
-            // update pivot points
-            torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            head.pivotPoint = rotatePoint(head.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            arm_right.pivotPoint = rotatePoint(arm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            arm_left.pivotPoint = rotatePoint(arm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            torso_lower.pivotPoint = rotatePoint(torso_lower.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            leg_right.pivotPoint = rotatePoint(leg_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            leg_left.pivotPoint = rotatePoint(leg_left.pivotPoint, leg_left.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            calf_right.pivotPoint = rotatePoint(calf_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            calf_left.pivotPoint = rotatePoint(calf_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            foot_right.pivotPoint = rotatePoint(foot_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
-            foot_left.pivotPoint = rotatePoint(foot_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle <= 20){
+                inForwardLeanTorso = true;
+                leapAttackAnim_TorsoLeanForwardStartingPosAngle += 0.2*animationSpeed;
+                leg_right.rotationAngle = leapAttackAnim_TorsoLeanForwardStartingPosAngle;
+                leg_left.rotationAngle = leapAttackAnim_TorsoLeanForwardStartingPosAngle;
 
-            // rotate limbs
-            torso = rotate_limb(torso,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso.pivotPoint.x,torso.pivotPoint.y);
-            torso_lower = rotate_limb(torso_lower,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y);
-            head = rotate_limb(head,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,head.pivotPoint.x,head.pivotPoint.y);
-            arm_right = rotate_limb(arm_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
-            arm_left = rotate_limb(arm_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
-            forearm_right = rotate_limb(forearm_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
-            forearm_left = rotate_limb(forearm_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
-            leg_right = rotate_limb(leg_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
-            leg_left = rotate_limb(leg_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
-            calf_right = rotate_limb(calf_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
-            calf_left = rotate_limb(calf_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
-            foot_right = rotate_limb(foot_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
-            foot_left = rotate_limb(foot_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+                // update pivot points
+                torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                head.pivotPoint = rotatePoint(head.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                arm_right.pivotPoint = rotatePoint(arm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                arm_left.pivotPoint = rotatePoint(arm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                torso_lower.pivotPoint = rotatePoint(torso_lower.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                leg_right.pivotPoint = rotatePoint(leg_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                leg_left.pivotPoint = rotatePoint(leg_left.pivotPoint, leg_left.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                calf_right.pivotPoint = rotatePoint(calf_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                calf_left.pivotPoint = rotatePoint(calf_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                foot_right.pivotPoint = rotatePoint(foot_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                foot_left.pivotPoint = rotatePoint(foot_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+
+                // rotate limbs
+                torso = rotate_limb(torso,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso.pivotPoint.x,torso.pivotPoint.y);
+                torso_lower = rotate_limb(torso_lower,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y);
+                head = rotate_limb(head,leapAttackAnim_TorsoLeanForwardStartingPosAngle,head.pivotPoint.x,head.pivotPoint.y);
+                arm_right = rotate_limb(arm_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+                arm_left = rotate_limb(arm_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+                leg_right = rotate_limb(leg_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+                leg_left = rotate_limb(leg_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+                calf_right = rotate_limb(calf_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+                calf_left = rotate_limb(calf_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+                foot_right = rotate_limb(foot_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+                foot_left = rotate_limb(foot_left,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+            }
+
+            else if (leapAttackAnim_TorsoLeanBackwardStartingPosAngle >= 0){
+                inForwardLeanTorso = false;
+                inBackwardLeanTorso = true;
+                leapAttackAnim_TorsoLeanBackwardStartingPosAngle -= 0.2*animationSpeed;
+                leg_right.rotationAngle = leapAttackAnim_TorsoLeanBackwardStartingPosAngle;
+                leg_left.rotationAngle = leapAttackAnim_TorsoLeanBackwardStartingPosAngle;
+
+                if (leapAttackAnim_TorsoLeanForwardStartingPosAngle >= 20){
+                    animateArmAttackLeap();
+                }
+
+                // update pivot points
+                torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                head.pivotPoint = rotatePoint(head.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                arm_right.pivotPoint = rotatePoint(arm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                arm_left.pivotPoint = rotatePoint(arm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, arm_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                torso_lower.pivotPoint = rotatePoint(torso_lower.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                leg_right.pivotPoint = rotatePoint(leg_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                leg_left.pivotPoint = rotatePoint(leg_left.pivotPoint, leg_left.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                calf_right.pivotPoint = rotatePoint(calf_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                calf_left.pivotPoint = rotatePoint(calf_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                foot_right.pivotPoint = rotatePoint(foot_right.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                foot_left.pivotPoint = rotatePoint(foot_left.pivotPoint, leg_left.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+
+                // rotate limbs
+                torso = rotate_limb(torso,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso.pivotPoint.x,torso.pivotPoint.y);
+                torso_lower = rotate_limb(torso_lower,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y);
+                head = rotate_limb(head,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,head.pivotPoint.x,head.pivotPoint.y);
+                arm_right = rotate_limb(arm_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+                arm_left = rotate_limb(arm_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+                leg_right = rotate_limb(leg_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+                leg_left = rotate_limb(leg_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+                calf_right = rotate_limb(calf_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+                calf_left = rotate_limb(calf_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+                foot_right = rotate_limb(foot_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+                foot_left = rotate_limb(foot_left,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+            }
         }
+        else if(side.equals("right")){
+            if (leapAttackAnim_TorsoLeanForwardStartingPosAngle >= -20){
+                inForwardLeanTorso = true;
+                leapAttackAnim_TorsoLeanForwardStartingPosAngle -= 0.2*animationSpeed;
+
+                // update pivot points
+                torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                head.pivotPoint = rotatePoint(head.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                arm_right.pivotPoint = rotatePoint(arm_right.pivotPoint, arm_right.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                arm_left.pivotPoint = rotatePoint(arm_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                torso_lower.pivotPoint = rotatePoint(torso_lower.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                leg_right.pivotPoint = rotatePoint(leg_right.pivotPoint, leg_right.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                leg_left.pivotPoint = rotatePoint(leg_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                calf_right.pivotPoint = rotatePoint(calf_right.pivotPoint, leg_right.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                calf_left.pivotPoint = rotatePoint(calf_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                foot_right.pivotPoint = rotatePoint(foot_right.pivotPoint, leg_right.pivotPoint, -leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+                foot_left.pivotPoint = rotatePoint(foot_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanForwardStartingPosAngle);
+
+                // rotate limbs
+                torso = rotate_limb(torso,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso.pivotPoint.x,torso.pivotPoint.y);
+                torso_lower = rotate_limb(torso_lower,leapAttackAnim_TorsoLeanForwardStartingPosAngle,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y);
+                head = rotate_limb(head,leapAttackAnim_TorsoLeanForwardStartingPosAngle,head.pivotPoint.x,head.pivotPoint.y);
+                arm_right = rotate_limb(arm_right,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+                arm_left = rotate_limb(arm_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+                leg_right = rotate_limb(leg_right,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+                leg_left = rotate_limb(leg_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+                calf_right = rotate_limb(calf_right,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+                calf_left = rotate_limb(calf_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+                foot_right = rotate_limb(foot_right,-leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+                foot_left = rotate_limb(foot_left,leapAttackAnim_TorsoLeanForwardStartingPosAngle,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+            }
+
+            else if (leapAttackAnim_TorsoLeanBackwardStartingPosAngle <= 0){
+                inForwardLeanTorso = false;
+                inBackwardLeanTorso = true;
+                leapAttackAnim_TorsoLeanBackwardStartingPosAngle += 0.2*animationSpeed;
+
+                if (leapAttackAnim_TorsoLeanForwardStartingPosAngle <= -20){
+                    animateArmAttackLeap();
+                }
+
+                // update pivot points
+                torso.pivotPoint = rotatePoint(torso.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                head.pivotPoint = rotatePoint(head.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                arm_right.pivotPoint = rotatePoint(arm_right.pivotPoint, arm_right.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                arm_left.pivotPoint = rotatePoint(arm_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                forearm_right.pivotPoint = rotatePoint(forearm_right.pivotPoint, arm_right.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                forearm_left.pivotPoint = rotatePoint(forearm_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                torso_lower.pivotPoint = rotatePoint(torso_lower.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                leg_right.pivotPoint = rotatePoint(leg_right.pivotPoint, leg_right.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                leg_left.pivotPoint = rotatePoint(leg_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                calf_right.pivotPoint = rotatePoint(calf_right.pivotPoint, leg_right.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                calf_left.pivotPoint = rotatePoint(calf_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                foot_right.pivotPoint = rotatePoint(foot_right.pivotPoint, leg_right.pivotPoint, -leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+                foot_left.pivotPoint = rotatePoint(foot_left.pivotPoint, torso.pivotPoint, leapAttackAnim_TorsoLeanBackwardStartingPosAngle);
+
+                // rotate limbs
+                torso = rotate_limb(torso,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso.pivotPoint.x,torso.pivotPoint.y);
+                torso_lower = rotate_limb(torso_lower,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,torso_lower.pivotPoint.x,torso_lower.pivotPoint.y);
+                head = rotate_limb(head,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,head.pivotPoint.x,head.pivotPoint.y);
+                arm_right = rotate_limb(arm_right,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_right.pivotPoint.x,arm_right.pivotPoint.y);
+                arm_left = rotate_limb(arm_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,arm_left.pivotPoint.x,arm_left.pivotPoint.y);
+                forearm_right = rotate_limb(forearm_right,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_right.pivotPoint.x,forearm_right.pivotPoint.y);
+                forearm_left = rotate_limb(forearm_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,forearm_left.pivotPoint.x,forearm_left.pivotPoint.y);
+                leg_right = rotate_limb(leg_right,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_right.pivotPoint.x,leg_right.pivotPoint.y);
+                leg_left = rotate_limb(leg_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,leg_left.pivotPoint.x,leg_left.pivotPoint.y);
+                calf_right = rotate_limb(calf_right,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_right.pivotPoint.x,calf_right.pivotPoint.y);
+                calf_left = rotate_limb(calf_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,calf_left.pivotPoint.x,calf_left.pivotPoint.y);
+                foot_right = rotate_limb(foot_right,-leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_right.pivotPoint.x,foot_right.pivotPoint.y);
+                foot_left = rotate_limb(foot_left,leapAttackAnim_TorsoLeanBackwardStartingPosAngle,foot_left.pivotPoint.x,foot_left.pivotPoint.y);
+            }
+        }
+
     }
 
     public void attackLight(Enemy enemy){
@@ -1453,114 +2250,232 @@ public class Player extends Entity{
     public void attackLeapingProcessStart(Entity entity, float destinationX){
         //System.out.println(torso.intersects(entity.torso));
 
-        if (torso.x <= targetX && !torso.intersects((entity.torso.x),entity.torso.y,1,1)){
-            torso.setRect(torso.x + movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+        if (side.equals("left")){
+            if (torso.x <= targetX && !torso.intersects((entity.torso.x),entity.torso.y,1,1)){
+                torso.setRect(torso.x + movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
 
-            animateAttackLeap();
-        }
-        else{
-            if (attackConditionCalculator(entity)){
-                entity.HP -= hitDamage;
+                animateAttackLeap();
             }
             else{
-                System.out.println("Missed leap attack");
+                if (attackConditionCalculator(entity)){
+                    entity.HP -= hitDamage;
+                }
+                else{
+                    System.out.println("Missed leap attack");
+                }
+                inForwardLeanTorso = false;
+                inBackwardLeanTorso = false;
+                inArmLeapAttackDown = false;
+                inArmLeapAttackUp = false;
+                leapAttackAnim_TorsoLeanForwardStartingPosAngle = 0;
+                leapAttackAnim_TorsoLeanBackwardStartingPosAngle = 20;
+                leapAttackAnim_ArmAttackDownStartingPosAngle = 0;
+                leapAttackAnim_ArmAttackUpStartingPosAngle = -70;
+                played = true;
+                gp.determineTurn();
+                inLeapAttackProcess = false;
             }
-            inForwardLeanTorso = false;
-            inBackwardLeanTorso = false;
-            inArmLeapAttackDown = false;
-            inArmLeapAttackUp = false;
-            leapAttackAnim_TorsoLeanForwardStartingPosAngle = 0;
-            leapAttackAnim_TorsoLeanBackwardStartingPosAngle = 20;
-            leapAttackAnim_ArmAttackDownStartingPosAngle = 0;
-            leapAttackAnim_ArmAttackUpStartingPosAngle = -70;
-            played = true;
-            gp.determineTurn();
-            inLeapAttackProcess = false;
+        }
+
+        else if (side.equals("right")){
+            if (torso.x >= targetX && !torso.intersects((entity.torso.x + entity.torso.width),entity.torso.y,1,1)){
+                torso.setRect(torso.x - movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+
+                animateAttackLeap();
+            }
+            else{
+                if (attackConditionCalculator(entity)){
+                    entity.HP -= hitDamage;
+                }
+                else{
+                    System.out.println("Missed leap attack");
+                }
+                inForwardLeanTorso = false;
+                inBackwardLeanTorso = false;
+                inArmLeapAttackDown = false;
+                inArmLeapAttackUp = false;
+                leapAttackAnim_TorsoLeanForwardStartingPosAngle = 0;
+                leapAttackAnim_TorsoLeanBackwardStartingPosAngle = -20;
+                leapAttackAnim_ArmAttackDownStartingPosAngle = 0;
+                leapAttackAnim_ArmAttackUpStartingPosAngle = 70;
+                played = true;
+                gp.determineTurn();
+                inLeapAttackProcess = false;
+            }
         }
     }
 
     public void lightAttackProcessStart(double rotUp,double rotDown){
-        // kol en tepedeyken vurması için
-        if (rotUp <= -80 && rotDown == -77.5){
-            attackLight(gp.currentEnemy);
-        }
-        // animasyonun bitmesini bekle
-        if (rotUp >= -80 || rotDown <= -20){
-            animateArmAttackLight();
-        }
-        else{
-            inGoUpArmLightAttack = false;
-            inGoDownArmLightAttack = false;
-        }
+        if (side.equals("left")){
+            // kol en tepedeyken vurması için
+            if (rotUp <= -80 && rotDown == -77.5){
+                attackLight(gp.currentEnemy);
+            }
+            // animasyonun bitmesini bekle
+            if (rotUp >= -80 || rotDown <= -20){
+                animateArmAttackLight();
+            }
+            else{
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = false;
+            }
         /*if (lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle <= 20 || lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle >= 8){
             animateLegAttackLight();
         }*/
-        // bittiğinde gerekli ayarları çek
-        if (/*rotUp <= -80 && rotDown >= -20*/inGoUpArmLightAttack == false && inGoDownArmLightAttack == false /*&& lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle >= 20 && lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle <= 8*/){
-            inGoUpArmLightAttack = false;
-            inGoDownArmLightAttack = false;
+            // bittiğinde gerekli ayarları çek
+            if (/*rotUp <= -80 && rotDown >= -20*/inGoUpArmLightAttack == false && inGoDownArmLightAttack == false /*&& lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle >= 20 && lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle <= 8*/){
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = false;
             /*inLegLeftRotateForwardUpAttackLight = false;
             inLegLeftRotateBackwardDownAttackLight = false;*/
-            lightAttackAnim_ArmGoUpStartingPosAngle = -20;
-            lightAttackAnim_ArmGoDownStartingPosAngle = -80;
+                lightAttackAnim_ArmGoUpStartingPosAngle = -20;
+                lightAttackAnim_ArmGoDownStartingPosAngle = -80;
             /*lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle = 8;
             lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle = 20;*/
-            played = true;
-            gp.determineTurn();
-            inLightAttackProcess = false;
+                played = true;
+                gp.determineTurn();
+                inLightAttackProcess = false;
+            }
+        }
+        else if (side.equals("right")){
+            // kol en tepedeyken vurması için
+            if (rotUp >= 80 && rotDown == 77.5){
+                attackLight(gp.currentEnemy);
+            }
+            // animasyonun bitmesini bekle
+            if (rotUp <= 80 || rotDown >= 20){
+                animateArmAttackLight();
+            }
+            else{
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = false;
+            }
+        /*if (lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle <= 20 || lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle >= 8){
+            animateLegAttackLight();
+        }*/
+            // bittiğinde gerekli ayarları çek
+            if (/*rotUp <= -80 && rotDown >= -20*/inGoUpArmLightAttack == false && inGoDownArmLightAttack == false /*&& lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle >= 20 && lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle <= 8*/){
+                inGoUpArmLightAttack = false;
+                inGoDownArmLightAttack = false;
+            /*inLegLeftRotateForwardUpAttackLight = false;
+            inLegLeftRotateBackwardDownAttackLight = false;*/
+                lightAttackAnim_ArmGoUpStartingPosAngle = 20;
+                lightAttackAnim_ArmGoDownStartingPosAngle = 80;
+            /*lightAttackAnim_LegLeftRotateForwardUpStartingPosAngle = 8;
+            lightAttackAnim_LegLeftRotateBackwardDownStartingPosAngle = 20;*/
+                played = true;
+                gp.determineTurn();
+                inLightAttackProcess = false;
+            }
         }
     }
 
     public void moveForwardProcessStart(float destinationX){
 
-        if (torso.x <= destinationX){
-            torso.setRect(torso.x + movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+        if (side.equals("left")) {
+            if (torso.x <= destinationX) {
 
-            animateArmWalking();
-            animateLegWalking();
+                torso.setRect(torso.x + movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+
+                animateArmWalking();
+                animateLegWalking();
+            }
+            else{
+                inForwardSwingArm = false;
+                inBackwardSwingArm = false;
+                inForwardSwingLeg = false;
+                inBackwardSwingLeg = false;
+                walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
+                walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
+                walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
+                walkingAnim_LegsSwingForwardStartingPosAngle = 10;
+                played = true;
+                gp.determineTurn();
+                inForwardWalkingProcess = false;
+            }
         }
-        else{
-            inForwardSwingArm = false;
-            inBackwardSwingArm = false;
-            inForwardSwingLeg = false;
-            inBackwardSwingLeg = false;
-            walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
-            walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
-            walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
-            walkingAnim_LegsSwingForwardStartingPosAngle = 10;
-            played = true;
-            gp.determineTurn();
-            inForwardWalkingProcess = false;
+        else if (side.equals("right")){
+            if (torso.x >= destinationX){
+                torso.setRect(torso.x - movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+
+                animateArmWalking();
+                animateLegWalking();
+            }
+            else{
+                inForwardSwingArm = false;
+                inBackwardSwingArm = false;
+                inForwardSwingLeg = false;
+                inBackwardSwingLeg = false;
+                walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
+                walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
+                walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
+                walkingAnim_LegsSwingForwardStartingPosAngle = 10;
+                played = true;
+                gp.determineTurn();
+                inForwardWalkingProcess = false;
+            }
         }
     }
 
     public void moveBackwardProcessStart(float destinationX){
 
-        if (torso.x >= destinationX){
-            torso.setRect(torso.x - movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+        if (side.equals("left")){
+            if (torso.x >= destinationX){
+                torso.setRect(torso.x - movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+                animateArmWalking();
+                animateLegWalking();
+            }
 
-            animateArmWalking();
-            animateLegWalking();
+            else{
+                inForwardSwingArm = false;
+                inBackwardSwingArm = false;
+                inForwardSwingLeg = false;
+                inBackwardSwingLeg = false;
+                walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
+                walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
+                walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
+                walkingAnim_LegsSwingForwardStartingPosAngle = 10;
+                played = true;
+                gp.determineTurn();
+                inBackwardWalkingProcess = false;
+            }
         }
-        else{
-            inForwardSwingArm = false;
-            inBackwardSwingArm = false;
-            inForwardSwingLeg = false;
-            inBackwardSwingLeg = false;
-            walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
-            walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
-            walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
-            walkingAnim_LegsSwingForwardStartingPosAngle = 10;
-            played = true;
-            gp.determineTurn();
-            inBackwardWalkingProcess = false;
+
+        else if (side.equals("right")){
+            if (torso.x <= destinationX){
+                torso.setRect(torso.x + movementSpeed, torso.getY(), torso.getWidth(), torso.getHeight());
+                animateArmWalking();
+                animateLegWalking();
+            }
+
+            else{
+                inForwardSwingArm = false;
+                inBackwardSwingArm = false;
+                inForwardSwingLeg = false;
+                inBackwardSwingLeg = false;
+                walkingAnim_ArmsSwingBackwardStartingPosAngle = -6;
+                walkingAnim_ArmsSwingForwardStartingPosAngle = 6;
+                walkingAnim_LegsSwingBackwardStartingPosAngle = 2;
+                walkingAnim_LegsSwingForwardStartingPosAngle = 10;
+                played = true;
+                gp.determineTurn();
+                inBackwardWalkingProcess = false;
+            }
         }
     }
 
     public boolean willCollideEnemy(Enemy enemy){
-        if (torso.x + + torso.width + stepSize >= enemy.torso.x){
-            return true;
+        if (side.equals("left")){
+            if (torso.x + torso.width + stepSize >= enemy.torso.x){
+                return true;
+            }
         }
+        else if(side.equals("right")){
+            if (torso.x - stepSize <= enemy.torso.x){
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -1610,6 +2525,7 @@ public class Player extends Entity{
 
     public void resetRightBeforeBattle(){
         torso.x = baseX;
+        side = "left";
         inGoUpArmLightAttack = false;
         inGoDownArmLightAttack = false;
         inLightAttackProcess = false;
@@ -1621,10 +2537,17 @@ public class Player extends Entity{
         inBackwardWalkingProcess = false;
         inLegLeftRotateForwardUpAttackLight = false;
         inLegLeftRotateBackwardDownAttackLight = false;
+        inBreatheOut = false;
+        inBreatheIn = false;
+        inBreatheOutArmGoDown = false;
+        inBreatheInArmGoUp = false;
+        inForwardLeanTorso = false;
+        inBackwardLeanTorso = false;
     }
 
     public void resetWalkingAnimationAndSwitchTurns(){
         // walking anim
+
         inForwardSwingArm = false;
         inBackwardSwingArm = false;
         inForwardSwingLeg = false;
@@ -1650,7 +2573,6 @@ public class Player extends Entity{
         played = true;
         gp.determineTurn();
     }
-
 
     public boolean level1Reached;
     public boolean level2Reached;

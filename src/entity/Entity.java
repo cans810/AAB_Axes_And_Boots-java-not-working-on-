@@ -50,7 +50,7 @@ public class Entity {
 
     // attributes
     public String name;
-    public int height;
+    public double heightInCm = 170;
 
     // strength attributes
     public double baseHitDamage = 2;

@@ -237,6 +237,9 @@ public class LevelUpGUI extends AABGUI {
         gp.player.strength = strengthPoint;
         gp.player.vitality = vitalityPoint;
         gp.player.dexterity = dexterityPoint;
+
+        // adjust player size here because of torso being drawn downward when entered to battle
+        gp.player.updateEntitySize(baseStrengthPoint,strengthPoint);
     }
 
     @Override

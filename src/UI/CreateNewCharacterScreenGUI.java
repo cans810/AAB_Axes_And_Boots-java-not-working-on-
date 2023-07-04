@@ -154,12 +154,15 @@ public class CreateNewCharacterScreenGUI extends AABGUI {
             hoveringDecreaseDexterityButton = false;
         }
 
+        double oldStrengthPoint = gp.player.strength;
+
         if (totalPoints > 0){
+
             if (increaseStrengthButtonHit == 1){
                 totalPoints -= 1;
                 strengthPoint += 1;
-                gp.player.strength += 1;
-                gp.player.growEntity(1.025);
+                gp.player.strength += 10;
+                //gp.player.growEntity(1.025);
             }
 
             else if (increaseVitalityButtonHit == 1){
@@ -180,7 +183,7 @@ public class CreateNewCharacterScreenGUI extends AABGUI {
                 totalPoints += 1;
                 strengthPoint -= 1;
                 gp.player.strength -= 1;
-                gp.player.growEntity(0.975);
+                //gp.player.growEntity(0.975);
             }
         }
 
@@ -203,6 +206,9 @@ public class CreateNewCharacterScreenGUI extends AABGUI {
         increaseStrengthButtonHit = -1;
         increaseVitalityButtonHit = -1;
         increaseDexterityButtonHit = -1;
+
+        // adjust player size here because of torso being drawn downward when entered to battle
+        gp.player.updateEntitySize(oldStrengthPoint,gp.player.strength);
     }
 
     @Override

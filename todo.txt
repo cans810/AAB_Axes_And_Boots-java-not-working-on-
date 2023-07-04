@@ -41,28 +41,34 @@ bilmesi için de animationSpeed de o oranda artmalı. // yapıldı ama farklı y
 
 süreye bağlı varış, ve bu süreye göre movementSpeed ve gereken eylemlerde animationSpeed'in ayarlanması // BU YENİ YOL, YAPILDI
 
-KODU ÖNCE Bİ ÇALIŞTIR, YAPTIĞIN HER ŞEYİ TEKRAR TEKRAR TEST ET
+strength, boy uzamasını cm'ye dönüştürmeyi falan yap her bir strength puanı 2 cm falan olabilir mesela onu düşün // yapıldı, 1.5 cm uzuyor initial height 170, ayarlamayı daha farklı yapabilirsin
 
-strength, boy uzamasını cm'ye dönüştürmeyi falan yap her bir strength puanı 2 cm falan olabilir mesela onu düşün
+ENEMY'NİN ARKASINA GEÇME OLUCAK MI, OLUCAKSA NASIL YAPICAĞINI DÜŞÜN, EĞER OLUCAKSA HERŞEYDEN ÖNCE ONU YAP. // SIDE SİSTEMİ EKLENDİ, KODLAR YENİLENDİ, BİRBİRİNİN ARKASINA GEÇME EKLENDİ.
 
-ENEMY'NİN ARKASINA GEÇME OLUCAK MI, OLUCAKSA NASIL YAPICAĞINI DÜŞÜN, EĞER OLUCAKSA HERŞEYDEN ÖNCE ONU YAP.
+draw, updatepivotpoints, updateentitypartpositions, ve başka diğer metodları entity classında toplayabiliyor musun ona bak.
+
+***NOT: yeni animasyon ekleneceği zaman, tarafa göre ayarlanmalar yapılacak, zaten öyle yapılıyordu, player ve enemy için ayrı ayarlamalar yapılıyordu, aynı mantık devam.
 
 karakter oluşturma kısmında karakterin gözüksün, mesela strength verdikçe boyunun uzadığı görülsün, boyu uzasın
 
-şehri yap, market, arenaya giriş ekranı, savaşıcağın karakteri inceleme
+şehri yap, market, marketler, silahçı, armourcu..., arenaya giriş ekranı, savaşacağın karakteri inceleme
 
-guiler arası geçişler kararıp geri aydınlanma geçişleriyle olsun // ACİL DEĞİL
+bir tane silah ekle, texture'ı olsun, hitdamage a katkısı olsun, gerçek oyundaki basit bir silah gibi tüm işlevleri olsun, oyuncuya ver, kullanabilsin, hep elinde tutsun
 
-yeteri kadar yakın olunduğu zaman ileri yürüme olmasın
+strength, dexterity ve vitality'ye yeni şeyler eklenebilir mi düşün, başka nerelere etkileri olur ?
+stamina ayarla, atak ayarla, defans ayarla, magic ayarla, aura ayarla ne kaldıysa geriye onları da ayarla
+atak ve defans ayarlamak için, vurma şansı, bloklama şansı falan ekle bunları düşün, atak ve defansı ayarlamak için biraz daha bekleyebilirsin.
 
 guiler, butonlar güzelleşecek...
-attributelar ve stat ayarları
-xp level ayarları
-para ekleme
-town'da marketler, silahçı, armourcu
-çeşitli enemyler
+guiler arası geçişler kararıp geri aydınlanma geçişleriyle olsun // ACİL DEĞİL
+
+attributelar ve stat ayarları hep gözden geçir, daha iyi olabilir mi bak
+xp level ayarları geliştir
+para
+random enemyler
 turnuva
 bosslar
 itemler
 itemlerin, gladyatörlerin, armorların, silahların textureları...
 herhangi bir butona tıklanıldığında tıklama sesi çıksın
+seviyeye göre random enemyler
